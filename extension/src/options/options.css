@@ -1,7 +1,90 @@
-body { font-family: system-ui, sans-serif; max-width: 600px; margin: 32px auto; padding: 0 20px; }
-h1 { font-size: 20px; margin-bottom: 24px; }
-h2 { font-size: 15px; font-weight: 600; margin-bottom: 10px; }
-section { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-p { margin-bottom: 8px; font-size: 14px; color: #374151; }
-button { padding: 6px 14px; background: #4f46e5; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
-button:hover { background: #4338ca; }
+:root {
+  --bg-color: #0d0d12;
+  --panel-bg: #16161e;
+  --text-primary: #f0f0f5;
+  --text-secondary: #94a3b8;
+  --accent-color: #6366f1;
+  --accent-hover: #4f46e5;
+  --border-color: #2e2e3e;
+  --success: #22c55e;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+:root.light-theme {
+  --bg-color: #f8fafc;
+  --panel-bg: #ffffff;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --accent-color: #4f46e5;
+  --accent-hover: #4338ca;
+  --border-color: #e2e8f0;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  background: var(--bg-color);
+  color: var(--text-primary);
+  transition: background 0.3s, color 0.3s;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+section {
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+
+h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--accent-color);
+}
+
+p {
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+strong {
+  color: var(--text-primary);
+}
+
+button {
+  padding: 10px 20px;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+button:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0);
+}

@@ -1,18 +1,28 @@
-feat:Thêm cơ chế đánh thức Service Worker để Inspect
+feat:Bổ sung trang Cấu hình và tính năng Dark/Light mode cho extension
 
 Input của user:
-Inspect views: service worker (Inactive) => thêm mở link này được hông mở devtools để xem log các script ở background.
+Bổ sung trang Cấu hình, để có thể bổ sung các cài đặt cho extension, theme sáng tối, và mở rộng các chức năng sau này. Giao diện theme sáng tối, có thể chọn theme sáng tối và tự động áp dụng. Xem tất cả UI chuyển sang responsive, có thể hiển thị trên cả mobile và desktop. Dùng flexbox và grid để bố cục.
 
 Nguyên nhân gốc:
-Trong Manifest V3, Service Worker (Background) thường xuyên ở trạng thái "Inactive" để tiết kiệm tài nguyên. Khi ở trạng thái này, link "service worker" trong trang quản lý extension sẽ không xuất hiện để click.
+Extension chưa có trang cài đặt tích hợp trong popup và chưa hỗ trợ chuyển đổi giao diện (theme). UI cũ có chiều rộng cố định, không responsive.
 
 Cách đã chỉnh để khắc phục:
-- Cập nhật background.js: Thêm listener cho hành động `WAKE_UP`. Khi nhận được message này, Service Worker sẽ khởi động lại và chuyển sang trạng thái "Active".
-- Cập nhật popup.js: Khi người dùng nhấn nút "🤖 Background", extension sẽ gửi message `WAKE_UP` trước khi mở trang quản lý. Việc này đảm bảo link "service worker" sẽ luôn hiển thị để người dùng click mở DevTools.
+- Thêm tab "Cài đặt" vào popup.html để quản lý theme và thông tin extension.
+- Triển khai hệ thống CSS variables hỗ trợ Dark/Light mode.
+- Sử dụng chrome.storage.local để lưu trữ và đồng bộ theme giữa Popup, Options và Side Panel.
+- Cập nhật CSS cho Popup, Options và Side Panel để hỗ trợ giao diện responsive (flexbox/grid) và auto-theme.
+- Fix lỗi text trong combo box (select) không hiển thị rõ trong chế độ tối bằng cách set background/color cụ thể cho option.
+- Thêm logic tự động áp dụng theme theo hệ thống (auto mode).
 
 File đã áp fix bug:
-- extension/src/background.js
+- extension/src/popup/popup.html
+- extension/src/popup/popup.css
 - extension/src/popup/popup.js
+- extension/src/options/options.css
+- extension/src/options/options.js
+- extension/src/sidepanel/sidepanel.html
+- extension/src/sidepanel/sidepanel.css
+- extension/src/sidepanel/sidepanel.js
 
-Trả lời câu hỏi "mở link này được hông":
-Đã bổ sung cơ chế tự động "đánh thức" Service Worker. Bây giờ khi bạn nhấn nút Background trong tab Quản trị, Service Worker sẽ được kích hoạt ngay lập tức, giúp link "service worker" luôn sẵn sàng để bạn click vào xem log.
+Trả lời câu hỏi "Thực hiện: @[tasks/03- add-feat-dark-light-mode.md]":
+Đã hoàn thành việc bổ sung trang Cấu hình, tính năng Dark/Light mode và tối ưu UI responsive cho toàn bộ extension.

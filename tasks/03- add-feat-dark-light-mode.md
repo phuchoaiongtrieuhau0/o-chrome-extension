@@ -21,13 +21,13 @@ Câu hỏi cần xác nhận:
 
 Agent tự tạo checklist từ `User prompt`, rồi đánh dấu khi từng bước hoàn tất.
 
-- [ ] Đọc yêu cầu user và xác định phạm vi thay đổi
-- [ ] Kiểm tra rule bắt buộc trong `AGENTS.md`
-- [ ] Xác định file/thư mục cần chỉnh
-- [ ] Triển khai thay đổi cần thiết
-- [ ] Kiểm tra lại thay đổi phù hợp yêu cầu
-- [ ] Cập nhật `.opushforce.message` đúng format trong `AGENTS.md`
-- [ ] Trả lời user ngắn gọn kèm file đã chỉnh
+- [x] Đọc yêu cầu user và xác định phạm vi thay đổi
+- [x] Kiểm tra rule bắt buộc trong `AGENTS.md`
+- [x] Xác định file/thư mục cần chỉnh
+- [x] Triển khai thay đổi cần thiết
+- [x] Kiểm tra lại thay đổi phù hợp yêu cầu
+- [x] Cập nhật `.opushforce.message` đúng format trong `AGENTS.md`
+- [x] Trả lời user ngắn gọn kèm file đã chỉnh
 
 ## File liên quan
 

@@ -22,6 +22,7 @@
 
     <nav class="tabs-nav">
       <button class="tab-btn active" data-tab="home">🏠 Home</button>
+      <button class="tab-btn" data-tab="settings">⚙ Cài đặt</button>
       <button class="tab-btn" data-tab="admin">🛡 Quản trị</button>
     </nav>
 
@@ -36,9 +37,35 @@
             <span>⊞</span> Mở Side Panel
           </button>
         </div>
-        <button class="btn btn--ghost" id="btn-options" style="margin-top: 8px;">
-          <span>⚙</span> Cài đặt
-        </button>
+      </div>
+
+      <!-- Tab Settings -->
+      <div id="tab-settings" class="tab-content">
+        <div class="card">
+          <h3 class="section-title">Giao diện</h3>
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Chủ đề</span>
+              <span class="setting-desc">Thay đổi giao diện sáng/tối</span>
+            </div>
+            <select id="select-theme" class="select-input">
+              <option value="dark">Tối (Dark)</option>
+              <option value="light">Sáng (Light)</option>
+              <option value="auto">Tự động (Hệ thống)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="section-title">Thông tin</h3>
+          <div class="info-row">
+            <span>ID Extension:</span>
+            <code id="ext-id-display">...</code>
+          </div>
+          <button class="btn btn--ghost" id="btn-options-settings" style="margin-top: 8px;">
+            <span>⚙</span> Mở trang cài đặt chi tiết
+          </button>
+        </div>
       </div>
 
       <!-- Tab Admin -->

@@ -9,16 +9,32 @@
   --success: #22c55e;
   --warning: #f59e0b;
   --error: #ef4444;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+:root.light-theme {
+  --bg-color: #f8fafc;
+  --panel-bg: #ffffff;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --accent-color: #4f46e5;
+  --accent-hover: #4338ca;
+  --border-color: #e2e8f0;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  width: 320px;
+  width: 100%;
+  min-width: 320px;
+  max-width: 600px;
+  margin: 0 auto;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background: var(--bg-color);
   color: var(--text-primary);
   overflow-x: hidden;
+  transition: background 0.3s, color 0.3s;
 }
 
 .container {
@@ -154,7 +170,75 @@ header {
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.setting-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.setting-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.setting-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.select-input {
+  background: var(--panel-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 12px;
+  padding-right: 28px;
+}
+
+.select-input option {
+  background: var(--panel-bg);
+  color: var(--text-primary);
+}
+
+.select-input:focus {
+  border-color: var(--accent-color);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 4px 0;
+}
+
+.info-row code {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  color: var(--accent-color);
 }
 
 .btn {

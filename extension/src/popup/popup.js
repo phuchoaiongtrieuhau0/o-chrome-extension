@@ -15,9 +15,65 @@ tabBtns.forEach(btn => {
     tabContents.forEach(c => c.classList.remove('active'));
     
     btn.classList.add('active');
-    document.getElementById(`tab-${target}`).classList.add('active');
+    const content = document.getElementById(`tab-${target}`);
+    if (content) content.classList.add('active');
+
+    // Save active tab
+    chrome.storage.local.set({ activeTab: target });
   });
 });
+
+// Restore active tab
+chrome.storage.local.get(['activeTab'], (result) => {
+  if (result.activeTab) {
+    const btn = document.querySelector(`.tab-btn[data-tab="${result.activeTab}"]`);
+    if (btn) btn.click();
+  }
+});
+
+// Theme Management
+const selectTheme = document.getElementById('select-theme');
+const root = document.documentElement;
+
+function applyTheme(theme) {
+  if (theme === 'auto') {
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.classList.toggle('light-theme', !isDark);
+  } else {
+    root.classList.toggle('light-theme', theme === 'light');
+  }
+}
+
+// Load and apply saved theme
+chrome.storage.local.get(['theme'], (result) => {
+  const theme = result.theme || 'dark';
+  selectTheme.value = theme;
+  applyTheme(theme);
+});
+
+selectTheme.addEventListener('change', (e) => {
+  const theme = e.target.value;
+  chrome.storage.local.set({ theme });
+  applyTheme(theme);
+});
+
+// Auto-apply theme if system settings change
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  chrome.storage.local.get(['theme'], (result) => {
+    if (result.theme === 'auto') applyTheme('auto');
+  });
+});
+
+// Listen for storage changes to sync theme in real-time
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.theme) {
+    applyTheme(changes.theme.newValue);
+    if (selectTheme) selectTheme.value = changes.theme.newValue;
+  }
+});
+
+// Extension ID
+document.getElementById('ext-id-display').textContent = chrome.runtime.id;
 
 async function refreshStatus() {
   const status = await getUpdateStatus();
@@ -140,7 +196,7 @@ document.getElementById('btn-open-sidepanel').addEventListener('click', async ()
   window.close();
 });
 
-document.getElementById('btn-options').addEventListener('click', () => {
+document.getElementById('btn-options-settings').addEventListener('click', () => {
   chrome.runtime.openOptionsPage();
   window.close();
 });
