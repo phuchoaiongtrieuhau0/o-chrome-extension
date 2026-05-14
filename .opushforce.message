@@ -1,26 +1,22 @@
-feat:Cấu hình Dark/Light mode; fix:Lỗi permission trên mobile
-
+fix: cập nhật cách lấy email Gmail từ trang SignOutOptions
 Input của user:
-Permission 'readingList' is unknown or URL pattern is malformed. trên mobile
-
+Tiếp tục xử lý task detect Gmail đã triển khai nhưng chưa lấy được email, dù page vẫn hiển thị email trong DOM.
 Nguyên nhân gốc:
-Manifest chứa permission 'readingList' và một số permission đặc thù không được hỗ trợ trên trình duyệt mobile (Kiwi, Yandex), gây lỗi khi cài đặt hoặc runtime.
-
+Logic cũ chỉ đọc selector `[data-email]`.
+Trang `https://accounts.google.com/SignOutOptions` ở bản DOM hiện tại không đảm bảo còn `data-email`; email nằm trong text của nút chọn account.
 Cách đã chỉnh để khắc phục:
-- Loại bỏ 'readingList', 'tabGroups' và các permission hệ thống/nâng cao không cần thiết khỏi manifest.json để đảm bảo tương thích tốt nhất trên Mobile.
-- Tối ưu danh sách permission để tránh cảnh báo bảo mật và lỗi cài đặt.
-- (Tính năng trước đó) Thêm tab Cấu hình, Dark/Light mode và UI responsive.
-
+1. Cập nhật `extension/src/content.js` để lấy account từ 3 nguồn.
+2. Ưu tiên đọc `[data-email]` nếu có.
+3. Fallback parse text từ `button[id^="choose-account-"]` để tách email bằng regex.
+4. Fallback cuối cùng quét email từ toàn bộ `document.body.innerText` rồi loại trùng.
+5. Giữ cơ chế gửi `ACCOUNTS_RESULT` về background như cũ.
+6. Cập nhật task note với file liên quan, kết quả kiểm tra và ghi chú selector không ổn định.
 File đã áp fix bug:
-- extension/manifest.json
-- extension/src/popup/popup.html
-- extension/src/popup/popup.css
-- extension/src/popup/popup.js
-- extension/src/options/options.css
-- extension/src/options/options.js
-- extension/src/sidepanel/sidepanel.html
-- extension/src/sidepanel/sidepanel.css
-- extension/src/sidepanel/sidepanel.js
-
-Trả lời câu hỏi "Permission 'readingList' is unknown or URL pattern is malformed. trên mobile":
-Đã loại bỏ permission 'readingList' và các quyền không tương thích khỏi manifest.json để sửa lỗi cài đặt trên mobile.
+- extension/src/content.js
+- tasks/04-task-template copy.md
+- .opushforce.message
+Trả lời câu hỏi "Hãy xử lý tiếp tục @tasks/04-task-template copy.md đã triển khai, nhưng chưa lấy được thông tin email":
+Đã sửa parser để không phụ thuộc riêng vào `[data-email]` nữa; giờ có thể lấy email từ text của nút account trên trang SignOutOptions.
+Cần reload extension rồi bấm lại `Kiểm tra Gmail` để kiểm tra runtime thực tế.
+Lệnh đã chạy:
+node --check "h:\nodejs-tester\o-chrome-extension\extension\src\content.js"

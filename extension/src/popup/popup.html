@@ -33,9 +33,19 @@
           <p style="font-size: 13px; margin-bottom: 12px; color: var(--text-secondary);">
             Chào mừng bạn đến với My Extension. Chọn chức năng từ menu để bắt đầu.
           </p>
-          <button class="btn btn--primary" id="btn-open-sidepanel">
+          <button class="btn btn--primary" id="btn-copy-page-elements" style="margin-bottom: 8px;">
+            <span>📋</span> Copy DOM cho AI
+          </button>
+          <button class="btn btn--secondary" id="btn-open-sidepanel" style="margin-bottom: 8px;">
             <span>⊞</span> Mở Side Panel
           </button>
+          <button class="btn btn--secondary" id="btn-check-gmail">
+            <span>📧</span> Kiểm tra Gmail
+          </button>
+          <div id="gmail-list" style="margin-top: 12px; display: none;">
+            <div class="section-title" style="font-size: 11px;">Tài khoản đã đăng nhập:</div>
+            <ul id="gmail-items" style="list-style: none; padding: 0; margin: 4px 0 0 0; font-size: 12px; color: var(--text-primary);"></ul>
+          </div>
         </div>
       </div>
 
@@ -54,6 +64,9 @@
               <option value="auto">Tự động (Hệ thống)</option>
             </select>
           </div>
+          <button class="btn btn--danger" id="btn-clear-data" style="margin-top: 12px; width: 100%; border-color: rgba(239, 68, 68, 0.2); color: #ef4444;">
+            <span>🗑</span> Xóa dữ liệu trình duyệt
+          </button>
         </div>
 
         <div class="card">

@@ -124,13 +124,127 @@ function showToast(message, duration = 3000) {
   }, duration);
 }
 
-async function copyToClipboard(text) {
+async function copyToClipboard(text, message = '📋 Đã copy vào bộ nhớ!') {
   try {
     await navigator.clipboard.writeText(text);
-    showToast('📋 Đã copy link vào bộ nhớ!');
+    showToast(message);
   } catch (err) {
     console.error('Failed to copy: ', err);
   }
+}
+
+async function copyActiveTabDomSummary(format = 'markdown') {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id) throw new Error('Không tìm thấy tab đang active.');
+
+  const injectionResults = await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    func: (injectedFormat) => {
+      function getXPath(el) {
+        if (el.id) return `//*[@id="${el.id}"]`;
+
+        const parts = [];
+        let current = el;
+        while (current && current.nodeType === Node.ELEMENT_NODE) {
+          let idx = 1;
+          let sibling = current.previousElementSibling;
+          while (sibling) {
+            if (sibling.tagName === current.tagName) idx++;
+            sibling = sibling.previousElementSibling;
+          }
+          parts.unshift(`${current.tagName.toLowerCase()}[${idx}]`);
+          current = current.parentElement;
+        }
+
+        return `/${parts.join('/')}`;
+      }
+
+      function getCssSelector(el) {
+        if (el.id) return `#${el.id}`;
+
+        const testId = el.getAttribute('data-testid');
+        if (testId) return `[data-testid="${testId}"]`;
+
+        const classes = [...el.classList].slice(0, 2).join('.');
+        return classes ? `${el.tagName.toLowerCase()}.${classes}` : el.tagName.toLowerCase();
+      }
+
+      const selectors = [
+        'a', 'button', 'input', 'select', 'textarea',
+        '[role="button"]', '[role="link"]', '[role="menuitem"]',
+        '[role="tab"]', '[role="checkbox"]', '[role="radio"]',
+        'h1', 'h2', 'h3', 'label', '[aria-label]', '[data-testid]'
+      ];
+
+      const seen = new WeakSet();
+      const elements = [];
+
+      document.querySelectorAll(selectors.join(',')).forEach((el, idx) => {
+        if (seen.has(el)) return;
+        seen.add(el);
+
+        const rect = el.getBoundingClientRect();
+        const style = getComputedStyle(el);
+        const isVisible = rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
+        if (!isVisible) return;
+
+        const text = el.textContent?.replace(/\s+/g, ' ').trim();
+        const label = el.getAttribute('aria-label') ||
+          el.getAttribute('placeholder') ||
+          el.getAttribute('title') ||
+          el.labels?.[0]?.textContent?.replace(/\s+/g, ' ').trim() ||
+          text?.slice(0, 80) ||
+          null;
+
+        elements.push({
+          idx,
+          tag: el.tagName.toLowerCase(),
+          role: el.getAttribute('role'),
+          type: el.getAttribute('type'),
+          id: el.id || null,
+          name: el.getAttribute('name') || null,
+          label,
+          href: el.href || null,
+          value: typeof el.value === 'string' ? el.value : null,
+          testId: el.getAttribute('data-testid') || null,
+          selector: getCssSelector(el),
+          xpath: getXPath(el),
+          pos: { x: Math.round(rect.x), y: Math.round(rect.y) }
+        });
+      });
+
+      const payload = {
+        url: location.href,
+        title: document.title,
+        elements
+      };
+
+      if (injectedFormat === 'json') {
+        return {
+          count: elements.length,
+          output: JSON.stringify(payload, null, 2)
+        };
+      }
+
+      const rows = elements.map((e) =>
+        `[${e.idx}] ${e.tag}${e.role ? `(${e.role})` : ''} | ${e.label ?? '-'} | ${e.selector}`
+      ).join('\n');
+
+      return {
+        count: elements.length,
+        output: `# ${payload.title}\nURL: ${payload.url}\n\n${rows}`
+      };
+    },
+    args: [format]
+  });
+
+  const result = injectionResults?.[0]?.result;
+  if (!result?.output) {
+    throw new Error('Tab hiện tại không trả về dữ liệu DOM. Có thể đây là trang đặc biệt hoặc inject bị chặn.');
+  }
+
+  await copyToClipboard(result.output, `📋 Đã copy ${result.count} phần tử cho AI!`);
+  return result.count;
 }
 
 // Event Listeners
@@ -190,6 +304,27 @@ document.getElementById('btn-check-update').addEventListener('click', async () =
   btn.disabled = false;
 });
 
+document.getElementById('btn-copy-page-elements').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-copy-page-elements');
+  const originalText = btn.innerHTML;
+
+  try {
+    btn.innerHTML = '<span>⏳</span> Đang lấy DOM...';
+    btn.disabled = true;
+    const count = await copyActiveTabDomSummary('markdown');
+    btn.innerHTML = `<span>✅</span> Đã copy ${count} items`;
+    setTimeout(() => {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }, 1200);
+  } catch (err) {
+    console.error('Copy page elements failed', err);
+    showToast(`❌ ${err.message || 'Không copy được DOM tab hiện tại.'}`, 4500);
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+  }
+});
+
 document.getElementById('btn-open-sidepanel').addEventListener('click', async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   await chrome.sidePanel.open({ tabId: tab.id });
@@ -199,6 +334,64 @@ document.getElementById('btn-open-sidepanel').addEventListener('click', async ()
 document.getElementById('btn-options-settings').addEventListener('click', () => {
   chrome.runtime.openOptionsPage();
   window.close();
+});
+
+document.getElementById('btn-clear-data').addEventListener('click', () => {
+  if (confirm('Bạn có chắc chắn muốn xóa toàn bộ cookies và local storage?')) {
+    chrome.browsingData.remove({
+      "since": 0
+    }, {
+      "appcache": true,
+      "cache": true,
+      "cacheStorage": true,
+      "cookies": true,
+      "downloads": true,
+      "fileSystems": true,
+      "formData": true,
+      "history": true,
+      "indexedDB": true,
+      "localStorage": true,
+      "passwords": true,
+      "serviceWorkers": true,
+      "webSQL": true
+    }, () => {
+      showToast('🗑 Đã xóa dữ liệu trình duyệt!');
+    });
+  }
+});
+
+document.getElementById('btn-check-gmail').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-check-gmail');
+  const gmailList = document.getElementById('gmail-list');
+  const gmailItems = document.getElementById('gmail-items');
+  const originalText = btn.innerHTML;
+
+  btn.innerHTML = '<span>📧</span> Đang kiểm tra...';
+  btn.disabled = true;
+  gmailList.style.display = 'none';
+  gmailItems.innerHTML = '';
+
+  try {
+    const accounts = await chrome.runtime.sendMessage({ action: 'GET_ACCOUNTS' });
+    if (accounts && accounts.length > 0) {
+      accounts.forEach(acc => {
+        const li = document.createElement('li');
+        li.style.padding = '4px 0';
+        li.style.borderBottom = '1px solid var(--border-color)';
+        li.innerHTML = `<strong>${acc.name}</strong><br><span style="color: var(--text-secondary); font-size: 11px;">${acc.email}</span>`;
+        gmailItems.appendChild(li);
+      });
+      gmailList.style.display = 'block';
+    } else {
+      showToast('⚠️ Không tìm thấy tài khoản Gmail nào.');
+    }
+  } catch (err) {
+    console.error('Check gmail failed', err);
+    showToast('❌ Lỗi khi kiểm tra tài khoản.');
+  } finally {
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+  }
 });
 
 // Inspect & Logs

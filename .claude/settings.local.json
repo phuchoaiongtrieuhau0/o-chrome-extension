@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(node --check \"h:\\\\nodejs-tester\\\\o-chrome-extension\\\\extension\\\\src\\\\popup\\\\popup.js\")",
+      "PowerShell(node --check \"h:\\\\nodejs-tester\\\\o-chrome-extension\\\\extension\\\\src\\\\content.js\")"
+    ]
+  }
+}
