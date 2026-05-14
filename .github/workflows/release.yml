@@ -79,7 +79,6 @@ jobs:
           gh release create latest \
             --title "Latest Build — v${{ env.VERSION }}" \
             --notes "Auto-built từ commit ${{ github.sha }} — v${{ env.VERSION }}" \
-            --prerelease \
             extension.crx \
             extension.zip
         env:

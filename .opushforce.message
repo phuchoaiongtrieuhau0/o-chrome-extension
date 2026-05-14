@@ -1,0 +1,22 @@
+fix: bỏ --prerelease khỏi gh release create
+
+## Input của user
+
+URL /releases/latest/download/extension.crx trả về 404 dù build thành công.
+
+## Nguyên nhân gốc
+
+GitHub quy định: `/releases/latest/download/` chỉ redirect đến **stable release** mới nhất.
+Flag `--prerelease` khiến release bị đánh dấu là prerelease → GitHub bỏ qua khi resolve "latest" → 404.
+
+## Cách đã chỉnh để khắc phục
+
+Bỏ `--prerelease` khỏi lệnh `gh release create latest`.
+
+## File đã áp fix bug
+
+- .github/workflows/release.yml
+
+## Trả lời câu hỏi "extension.crx 404 dù build xong"
+
+Đã fix. Push lại, URL /releases/latest/download/extension.crx sẽ hoạt động.
