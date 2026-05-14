@@ -82,7 +82,6 @@
     "geolocation",
     "identity",
     "nativeMessaging",
-    "processes",
     "system.cpu",
     "system.memory",
     "system.display",

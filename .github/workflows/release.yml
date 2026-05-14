@@ -31,15 +31,15 @@ jobs:
         with:
           node-version: "20"
 
-      # ── Version tự động: YY.MMDD.1HHmm (giờ Việt Nam) ─────────
+      # ── Version tự động: 1.M.D.HHmm (giờ Việt Nam) ───────────────
       - name: Set version
         id: version
         run: |
           export TZ=Asia/Ho_Chi_Minh
-          YY=$(date +'%y')
-          MMDD=$(date +'%m%d')
-          HHmm=$(date +'%H%M')
-          VERSION="${YY}.${MMDD}.1${HHmm}"
+          M=$(date +'%m' | sed 's/^0//')
+          D=$(date +'%d' | sed 's/^0//')
+          HHmm=$(date +'%H%M' | sed 's/^0//')
+          VERSION="1.${M}.${D}.${HHmm}"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           node scripts/set-version.js $VERSION

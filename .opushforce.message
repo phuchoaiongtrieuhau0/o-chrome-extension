@@ -1,26 +1,30 @@
-fix: đổi định dạng version thành YY.MMDD.1HHmm để tương thích với Chrome
+fix: xử lý lỗi version Chrome, lỗi permission 'processes' và giải thích lỗi 404 updater
 
 ## Input của user
 
-Required value 'version' is missing or invalid. It must be between 1-4 dot-separated integers each between 0 and 65536.
-Hãy đổi lại thành YY.MMDD.1HHmm 
+1. Version '26.514.11048' (Chrome tự strip 0 ở đầu 0514) khó đọc.
+2. Lỗi 'processes' permission requires dev channel.
+3. Kiểm tra cập nhật lỗi HTTP 404.
 
 ## Nguyên nhân gốc
 
-Chrome Extension chỉ cho phép tối đa 4 phần trong version. Định dạng cũ `1.YY.MMDD.1.HHmm` có 5 phần nên bị Chrome từ chối.
+1. Chrome tự động xóa số 0 ở đầu mỗi phần version (ví dụ `0514` -> `514`).
+2. Permission `processes` chỉ dành cho Chrome Dev channel, không chạy được trên Stable/Beta.
+3. HTTP 404 updater: GitHub Pages chưa được kích hoạt hoặc chưa chọn đúng branch `gh-pages` trong Settings.
 
 ## Cách đã chỉnh để khắc phục
 
-- Sửa `.github/workflows/release.yml`: Đổi logic ghép VERSION thành `${YY}.${MMDD}.1${HHmm}`.
-- Sửa `scripts/set-version.js`: Cập nhật comment ví dụ. Regex cũ đã hỗ trợ 3 phần số nên không cần đổi.
-
-Ví dụ: `26.0514.10956` (3 phần, hợp lệ).
+- **Version mới:** `1.M.D.HHmm` (ví dụ `1.5.14.1105`). 4 phần, cực kỳ dễ đọc, tuân thủ đúng spec của Chrome.
+- **Permission:** Xóa `processes` khỏi `manifest.json`.
+- **Updater:** Kiểm tra lại URL trong `manifest.json` thấy đã đúng, lỗi 404 thường do config GitHub Pages.
 
 ## File đã áp fix bug
 
 - .github/workflows/release.yml
-- scripts/set-version.js
+- extension/manifest.json
 
-## Trả lời câu hỏi "chỉnh định dạng version mới"
+## Trả lời câu hỏi "Lỗi version, processes và updater"
 
-Đã đổi thành `YY.MMDD.1HHmm`. Định dạng này có 3 phần, tuân thủ đúng quy định của Chrome (tối đa 4 phần, mỗi phần < 65536).
+1. **Version:** Đã đổi sang `1.Tháng.Ngày.GiờPhút` (ví dụ `1.5.14.1105`). Nhìn vào là biết ngay build lúc nào.
+2. **Processes:** Đã xóa permission này, extension sẽ khởi chạy bình thường.
+3. **Updater 404:** Bạn cần vào **Settings -> Pages** trên GitHub, mục **Build and deployment -> Branch**, chọn branch **gh-pages** và folder **/ (root)**, sau đó bấm **Save**. Đợi 1-2 phút cho GitHub deploy xong thì URL sẽ hết 404.
