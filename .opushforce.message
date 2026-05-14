@@ -1,22 +1,21 @@
-fix: sửa regex validate version trong set-version.js
+fix: sửa lệnh ghi PEM key trong release.yml
 
 ## Input của user
 
-Lỗi: node scripts/set-version.js bị "Usage: node scripts/set-version.js X.Y.Z" khi gọi với version 1.26.0514.1.0956
+crx3 lỗi: "Could not load key from ''" — file extension.pem rỗng hoặc không đọc được path.
 
 ## Nguyên nhân gốc
 
-Regex cũ `/^\d+\.\d+\.\d+$/` chỉ chấp nhận đúng 3 phần (X.Y.Z).
-Format mới `1.YY.MMDD.1.HHmm` có 5 phần → không match → exit code 1.
+`echo "${{ secrets.CRX_PRIVATE_KEY }}" > extension.pem` — GitHub Actions inject secret thành multiline string, `echo` trên bash có thể bị shell escape hoặc không giữ đúng newline của PEM block, khiến `crx3` nhận path rỗng `""` khi parse key.
 
 ## Cách đã chỉnh để khắc phục
 
-Đổi regex sang `/^\d+(\.\d+){2,}$/` — chấp nhận 3 phần trở lên.
+Đổi sang `printf '%s' "..."` — format `%s` không thêm newline thừa, giữ nguyên nội dung PEM.
 
 ## File đã áp fix bug
 
-- scripts/set-version.js
+- .github/workflows/release.yml
 
-## Trả lời câu hỏi "chỉnh file set-version.js theo cấu trúc version mới"
+## Trả lời câu hỏi "lỗi crx3 không đọc được PEM key"
 
-Đã fix. Regex mới chấp nhận mọi format có ≥3 phần số, bao gồm 1.26.0514.1.0956.
+Đã fix. Dùng `printf '%s'` thay `echo` để ghi PEM đúng format, crx3 sẽ đọc được key.
