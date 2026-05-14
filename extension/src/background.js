@@ -47,3 +47,12 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
     await checkForUpdates();
   }
 });
+
+// Lắng nghe message để "đánh thức" service worker khi cần inspect
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'WAKE_UP') {
+    log(TAG, 'Service worker is awake for inspection.');
+    sendResponse({ status: 'awake' });
+  }
+  return true;
+});

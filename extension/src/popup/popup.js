@@ -54,14 +54,24 @@ function getDownloadUrl(format) {
   return `https://github.com/${user}/${repo}/releases/latest/download/extension.${format}`;
 }
 
+function showToast(message, duration = 3000) {
+  let toast = document.querySelector('.toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.className = 'toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.classList.add('show');
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, duration);
+}
+
 async function copyToClipboard(text) {
   try {
     await navigator.clipboard.writeText(text);
-    const originalText = document.getElementById('status-text').textContent;
-    document.getElementById('status-text').textContent = '📋 Đã copy link!';
-    setTimeout(() => {
-      document.getElementById('status-text').textContent = originalText;
-    }, 2000);
+    showToast('📋 Đã copy link vào bộ nhớ!');
   } catch (err) {
     console.error('Failed to copy: ', err);
   }
@@ -108,7 +118,7 @@ document.getElementById('btn-choose-file').addEventListener('click', () => {
 document.getElementById('file-input').addEventListener('change', (e) => {
   if (e.target.files.length > 0) {
     const fileName = e.target.files[0].name;
-    alert(`Đã chọn: ${fileName}\n\nLƯU Ý: Extension không thể tự ghi đè file hệ thống.\nHãy giải nén nội dung file này vào thư mục extension hiện tại, sau đó bấm nút "Reload Extension".`);
+    showToast(`📁 Đã chọn: ${fileName}. Hãy giải nén và bấm Reload.`, 5000);
   }
 });
 
@@ -133,6 +143,34 @@ document.getElementById('btn-open-sidepanel').addEventListener('click', async ()
 document.getElementById('btn-options').addEventListener('click', () => {
   chrome.runtime.openOptionsPage();
   window.close();
+});
+
+// Inspect & Logs
+document.getElementById('btn-inspect-popup').addEventListener('click', () => {
+  showToast('🔍 Chuột phải vào Popup -> Inspect để xem log.', 4000);
+});
+
+document.getElementById('btn-inspect-bg').addEventListener('click', async () => {
+  // Gửi message để đánh thức Service Worker trước khi mở trang quản lý
+  try {
+    await chrome.runtime.sendMessage({ action: 'WAKE_UP' });
+  } catch (e) {
+    console.log('Background is currently inactive, waking up...');
+  }
+  
+  const extId = chrome.runtime.id;
+  chrome.tabs.create({ url: `chrome://extensions/?id=${extId}` });
+  showToast('🤖 Đã đánh thức SW. Bấm "service worker" ở tab mới.', 5000);
+});
+
+document.getElementById('btn-inspect-options').addEventListener('click', () => {
+  chrome.tabs.create({ url: chrome.runtime.getURL('src/options/options.html') });
+  showToast('⚙ Trang Options đã mở. Nhấn F12 để xem log.', 4000);
+});
+
+document.getElementById('btn-inspect-sidepanel').addEventListener('click', () => {
+  chrome.tabs.create({ url: chrome.runtime.getURL('src/sidepanel/sidepanel.html') });
+  showToast('⊞ Side Panel đã mở. Nhấn F12 để xem log.', 4000);
 });
 
 refreshStatus();
