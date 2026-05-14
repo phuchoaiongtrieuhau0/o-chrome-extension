@@ -1,26 +1,25 @@
-feat: thêm link quản lý extension và tối ưu quy trình cập nhật nhanh
+fix: sửa lỗi mobile (webAuthenticationProxy) và lỗi DOMParser trong Service Worker
 
 ## Input của user
 
-1. Bổ sung link mở trực tiếp trang quản trị: chrome://extensions/, kiwi://extensions.
-2. Tự động mở hộp thoại chọn file zip để cập nhật nhanh.
+1. 'webAuthenticationProxy' is not allowed for specified platform.
+2. [EXT][...][updater] parse XML failed ReferenceError: DOMParser is not defined
 
 ## Nguyên nhân gốc
 
-Người dùng muốn giảm bớt các thao tác thủ công khi phải tìm trang quản lý extension hoặc tìm nút chọn file.
+1. Permission `webAuthenticationProxy` không được Chrome hỗ trợ trên nền tảng Android (Kiwi Browser).
+2. `DOMParser` là API của DOM (Window), trong khi `background.js` chạy trên Service Worker (không có Window/DOM) nên bị báo lỗi `ReferenceError`.
 
 ## Cách đã chỉnh để khắc phục
 
-- **Link quản lý**: Thêm link "Quản lý Extension" vào popup. Code tự động nhận diện trình duyệt (Chrome, Kiwi, hoặc Edge) để mở đúng URL tương ứng.
-- **Cập nhật nhanh**: Tối ưu nút "Chọn file ZIP". Khi nhấn vào, hộp thoại chọn file sẽ hiện lên ngay lập tức. Sau khi chọn file, hệ thống sẽ nhắc người dùng giải nén và nhấn "Reload" để hoàn tất.
+- **Manifest**: Xóa `webAuthenticationProxy` để extension chạy được trên mobile.
+- **Updater**: Sửa hàm `parseVersion` trong `updater.js`, dùng **Regex** thay cho `DOMParser`. Regex hoạt động được trong cả Service Worker và UI.
 
 ## File đã áp fix bug
 
-- extension/src/popup/popup.html
-- extension/src/popup/popup.js
+- extension/manifest.json
+- extension/src/core/updater.js
 
-## Trả lời câu hỏi "Link quản lý và tự động mở chọn file"
+## Trả lời câu hỏi "Lỗi trên mobile"
 
-Đã xong!
-1. Bạn có thể nhấn vào link **Quản lý Extension** ở góc trên bên phải popup để mở nhanh trang cài đặt (tự nhận diện Kiwi/Chrome).
-2. Nút **Chọn file ZIP** bây giờ sẽ mở ngay hộp thoại chọn file. Sau khi chọn xong, bạn chỉ cần giải nén rồi bấm **Reload Extension** là xong.
+Đã fix xong lỗi trên mobile! Mình đã xóa quyền truy cập không tương thích và thay thế cơ chế parse XML bằng Regex để chạy được trong Service Worker (nơi không có DOMParser). Bạn hãy push bản này lên là mobile sẽ chạy mượt nhé.

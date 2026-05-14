@@ -86,8 +86,7 @@
     "system.memory",
     "system.display",
     "system.storage",
-    "power",
-    "webAuthenticationProxy"
+    "power"
   ],
 
   "host_permissions": ["<all_urls>"],

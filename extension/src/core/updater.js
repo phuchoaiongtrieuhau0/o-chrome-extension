@@ -11,15 +11,13 @@ const STORAGE_KEY = 'core:update_status';
 // Parse XML trả về version string hoặc null
 function parseVersion(xmlText) {
   try {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(xmlText, 'text/xml'); // Dùng text/xml thay vì application/xml
-    const nodes = doc.getElementsByTagName('updatecheck');
-    
-    if (nodes.length > 0) {
-      return nodes[0].getAttribute('version');
+    // Không dùng DOMParser vì Service Worker (background.js) không hỗ trợ
+    const match = xmlText.match(/<updatecheck[\s\S]+?version=['"]([^'"]+)['"]/);
+    if (match && match[1]) {
+      return match[1];
     }
     
-    warn(TAG, 'updatecheck tag not found in XML. Content snippet:', xmlText.substring(0, 100));
+    warn(TAG, 'updatecheck version not found in XML using regex. Content snippet:', xmlText.substring(0, 100));
     return null;
   } catch (e) {
     err(TAG, 'parse XML failed', e);
