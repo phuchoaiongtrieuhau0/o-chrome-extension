@@ -12,9 +12,15 @@ const STORAGE_KEY = 'core:update_status';
 function parseVersion(xmlText) {
   try {
     const parser = new DOMParser();
-    const doc = parser.parseFromString(xmlText, 'application/xml');
-    const node = doc.querySelector('updatecheck');
-    return node ? node.getAttribute('version') : null;
+    const doc = parser.parseFromString(xmlText, 'text/xml'); // Dùng text/xml thay vì application/xml
+    const nodes = doc.getElementsByTagName('updatecheck');
+    
+    if (nodes.length > 0) {
+      return nodes[0].getAttribute('version');
+    }
+    
+    warn(TAG, 'updatecheck tag not found in XML. Content snippet:', xmlText.substring(0, 100));
+    return null;
   } catch (e) {
     err(TAG, 'parse XML failed', e);
     return null;

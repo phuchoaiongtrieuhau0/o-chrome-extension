@@ -1,30 +1,23 @@
-fix: xử lý lỗi version Chrome, lỗi permission 'processes' và giải thích lỗi 404 updater
+fix: cải thiện khả năng parse updates.xml trong updater.js
 
 ## Input của user
 
-1. Version '26.514.11048' (Chrome tự strip 0 ở đầu 0514) khó đọc.
-2. Lỗi 'processes' permission requires dev channel.
-3. Kiểm tra cập nhật lỗi HTTP 404.
+[EXT][updater] checkForUpdates failed Error: Could not parse version from XML
 
 ## Nguyên nhân gốc
 
-1. Chrome tự động xóa số 0 ở đầu mỗi phần version (ví dụ `0514` -> `514`).
-2. Permission `processes` chỉ dành cho Chrome Dev channel, không chạy được trên Stable/Beta.
-3. HTTP 404 updater: GitHub Pages chưa được kích hoạt hoặc chưa chọn đúng branch `gh-pages` trong Settings.
+`DOMParser` với `application/xml` và `querySelector` có thể bị lỗi nếu file XML được server trả về với MIME type khác hoặc có namespace phức tạp. Nếu URL bị redirect hoặc trả về HTML (ví dụ trang 404 của GitHub), `querySelector` sẽ không tìm thấy tag `updatecheck`.
 
 ## Cách đã chỉnh để khắc phục
 
-- **Version mới:** `1.M.D.HHmm` (ví dụ `1.5.14.1105`). 4 phần, cực kỳ dễ đọc, tuân thủ đúng spec của Chrome.
-- **Permission:** Xóa `processes` khỏi `manifest.json`.
-- **Updater:** Kiểm tra lại URL trong `manifest.json` thấy đã đúng, lỗi 404 thường do config GitHub Pages.
+- Chuyển `parseFromString` sang mode `text/xml` để linh hoạt hơn.
+- Dùng `getElementsByTagName('updatecheck')` thay cho `querySelector` để tránh vấn đề namespace.
+- Thêm log `warn` nội dung XML nếu parse thất bại để dễ debug.
 
 ## File đã áp fix bug
 
-- .github/workflows/release.yml
-- extension/manifest.json
+- extension/src/core/updater.js
 
-## Trả lời câu hỏi "Lỗi version, processes và updater"
+## Trả lời câu hỏi "Lỗi parse version từ XML"
 
-1. **Version:** Đã đổi sang `1.Tháng.Ngày.GiờPhút` (ví dụ `1.5.14.1105`). Nhìn vào là biết ngay build lúc nào.
-2. **Processes:** Đã xóa permission này, extension sẽ khởi chạy bình thường.
-3. **Updater 404:** Bạn cần vào **Settings -> Pages** trên GitHub, mục **Build and deployment -> Branch**, chọn branch **gh-pages** và folder **/ (root)**, sau đó bấm **Save**. Đợi 1-2 phút cho GitHub deploy xong thì URL sẽ hết 404.
+Đã cải thiện code parse XML để ổn định hơn. Nếu bạn vẫn gặp lỗi này, hãy kiểm tra tab Console để xem snippet nội dung XML mà extension nhận được (nó sẽ hiện sau dòng `updatecheck tag not found`). Nếu snippet là mã HTML, có nghĩa là URL `updates.xml` vẫn đang bị 404 hoặc lỗi server.
