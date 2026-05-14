@@ -1,27 +1,21 @@
-fix: tối ưu kích thước icon để hiển thị được trên toolbar
+fix: sửa lỗi duplicate id khi tạo context menu
 
 ## Input của user
 
-Kiểm tra logo, các file icon16.png nó hông thể hiện trên toolbar.
+Unchecked runtime.lastError: Cannot create item with duplicate id hello-world
 
 ## Nguyên nhân gốc
 
-File `icon16.png` trước đó được copy trực tiếp từ file 128px gốc nên có kích thước 546KB và độ phân giải 128x128. Chrome thường từ chối hiển thị các icon quá nặng hoặc sai độ phân giải chuẩn trên thanh công cụ (Toolbar).
+Trong Manifest V3, Service Worker có thể bị tắt và khởi động lại nhiều lần (hoặc khi bạn reload extension). Mỗi lần khởi động, hàm `register()` của các feature lại gọi `chrome.contextMenus.create`. Nếu ID đã tồn tại, Chrome sẽ báo lỗi duplicate.
 
 ## Cách đã chỉnh để khắc phục
 
-- Sử dụng thư viện `jimp` để resize chính xác các icon:
-    - `icon16.png` -> 16x16 px (~600 bytes)
-    - `icon32.png` -> 32x32 px (~2.8 KB)
-    - `icon48.png` -> 48x48 px (~5.9 KB)
-- Đảm bảo các file này có dung lượng nhẹ và đúng chuẩn Chrome yêu cầu.
+Thêm lệnh `chrome.contextMenus.removeAll()` vào đầu hàm `initFeatures()` trong `background.js`. Việc này đảm bảo dọn dẹp sạch sẽ các menu cũ trước khi đăng ký các feature mới, tránh xung đột ID.
 
 ## File đã áp fix bug
 
-- extension/icons/icon16.png
-- extension/icons/icon32.png
-- extension/icons/icon48.png
+- extension/src/background.js
 
-## Trả lời câu hỏi "Logo không hiện trên toolbar"
+## Trả lời câu hỏi "Lỗi duplicate id hello-world"
 
-Đã fix xong! Nguyên nhân là do file icon cũ quá nặng (546KB) nên Chrome không load được lên toolbar. Mình đã resize lại đúng chuẩn 16x16, 32x32, 48x48 với dung lượng siêu nhẹ. Bây giờ logo sẽ hiện rõ nét trên thanh công cụ.
+Đã fix xong! Mình đã thêm bước dọn dẹp menu cũ trước khi tạo mới. Bây giờ mỗi lần extension khởi động lại sẽ không còn bị báo lỗi duplicate ID nữa.

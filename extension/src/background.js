@@ -13,6 +13,9 @@ import { register as registerHelloWorld } from './features/hello-world/index.js'
 const TAG = 'background';
 
 async function initFeatures() {
+  // Clear cũ để tránh lỗi "Duplicate ID" khi Service Worker khởi động lại
+  chrome.contextMenus.removeAll();
+  
   await registerHelloWorld();
   // await registerXxx();  ← gọi thêm vào đây
 }
