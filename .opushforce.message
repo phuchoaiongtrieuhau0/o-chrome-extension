@@ -1,26 +1,27 @@
-fix: sửa lỗi không hiện thông báo do định dạng icon SVG
+fix: tối ưu kích thước icon để hiển thị được trên toolbar
 
 ## Input của user
 
-Uncaught (in promise) Error: Unable to download all specified images. (Khi mở Hello world)
+Kiểm tra logo, các file icon16.png nó hông thể hiện trên toolbar.
 
 ## Nguyên nhân gốc
 
-Hàm `chrome.notifications.create` trên nhiều nền tảng (bao gồm cả một số bản Chrome Desktop và Android) không hỗ trợ định dạng **SVG** làm `iconUrl`. Khi truyền file `.svg`, hệ thống báo lỗi không tải được ảnh.
+File `icon16.png` trước đó được copy trực tiếp từ file 128px gốc nên có kích thước 546KB và độ phân giải 128x128. Chrome thường từ chối hiển thị các icon quá nặng hoặc sai độ phân giải chuẩn trên thanh công cụ (Toolbar).
 
 ## Cách đã chỉnh để khắc phục
 
-- **Tạo Icon PNG**: Sử dụng AI để tạo một bộ icon mới định dạng **PNG** (16, 32, 48, 128 px).
-- **Cập nhật Manifest**: Thay đổi toàn bộ khai báo icon từ `.svg` sang `.png`.
-- **Cập nhật Code**: Sửa `iconUrl` trong `updater.js` và `features/hello-world/index.js` trỏ về file `.png`.
+- Sử dụng thư viện `jimp` để resize chính xác các icon:
+    - `icon16.png` -> 16x16 px (~600 bytes)
+    - `icon32.png` -> 32x32 px (~2.8 KB)
+    - `icon48.png` -> 48x48 px (~5.9 KB)
+- Đảm bảo các file này có dung lượng nhẹ và đúng chuẩn Chrome yêu cầu.
 
 ## File đã áp fix bug
 
-- extension/manifest.json
-- extension/src/core/updater.js
-- extension/src/features/hello-world/index.js
-- extension/icons/*.png (mới)
+- extension/icons/icon16.png
+- extension/icons/icon32.png
+- extension/icons/icon48.png
 
-## Trả lời câu hỏi "Lỗi Unable to download all specified images"
+## Trả lời câu hỏi "Logo không hiện trên toolbar"
 
-Đã fix xong! Nguyên nhân là do Chrome không hỗ trợ ảnh SVG trong thông báo (Notifications). Mình đã thay toàn bộ icon sang định dạng PNG và cập nhật code tương ứng. Bây giờ bạn nhấn "Hello World" sẽ hiện thông báo bình thường.
+Đã fix xong! Nguyên nhân là do file icon cũ quá nặng (546KB) nên Chrome không load được lên toolbar. Mình đã resize lại đúng chuẩn 16x16, 32x32, 48x48 với dung lượng siêu nhẹ. Bây giờ logo sẽ hiện rõ nét trên thanh công cụ.
