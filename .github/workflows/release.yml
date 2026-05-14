@@ -9,6 +9,11 @@ permissions:
   pages: write
   id-token: write
 
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  EXTENSION_ID: ${{ secrets.EXTENSION_ID }}
+  CRX_PRIVATE_KEY: ${{ secrets.CRX_PRIVATE_KEY }}
+
 jobs:
   release:
     runs-on: ubuntu-latest
