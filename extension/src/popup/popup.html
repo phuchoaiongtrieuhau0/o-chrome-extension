@@ -45,7 +45,18 @@
           <div id="gmail-list" style="margin-top: 12px; display: none;">
             <div class="section-title" style="font-size: 11px;">Tài khoản đã đăng nhập:</div>
             <ul id="gmail-items" style="list-style: none; padding: 0; margin: 4px 0 0 0; font-size: 12px; color: var(--text-primary);"></ul>
+            <div id="gmail-sync-status" class="small-status"></div>
           </div>
+        </div>
+
+        <div class="card">
+          <h3 class="section-title">Dữ liệu email hiện tại</h3>
+          <div class="action-row">
+            <button class="btn btn--secondary" id="btn-refresh-current-data">Xem JSON</button>
+            <button class="btn btn--ghost" id="btn-copy-current-data">Copy</button>
+            <button class="btn btn--ghost" id="btn-export-current-data">Xuất file</button>
+          </div>
+          <pre id="current-email-json" class="json-view">Chưa có dữ liệu.</pre>
         </div>
       </div>
 
@@ -63,6 +74,14 @@
               <option value="light">Sáng (Light)</option>
               <option value="auto">Tự động (Hệ thống)</option>
             </select>
+          </div>
+          <div class="setting-form">
+            <label class="field-label" for="realtime-db-url">Realtime DB URL</label>
+            <input id="realtime-db-url" class="text-input" type="url" placeholder="https://project.firebaseio.com">
+            <label class="field-label" for="realtime-db-secret">Secret</label>
+            <input id="realtime-db-secret" class="text-input" type="password" placeholder="Database secret">
+            <button class="btn btn--secondary" id="btn-save-realtime-config">Lưu cấu hình realtime</button>
+            <div id="realtime-config-status" class="small-status"></div>
           </div>
           <button class="btn btn--danger" id="btn-clear-data" style="margin-top: 12px; width: 100%; border-color: rgba(239, 68, 68, 0.2); color: #ef4444;">
             <span>🗑</span> Xóa dữ liệu trình duyệt
@@ -109,6 +128,14 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <div class="card" style="margin-top: 12px;">
+          <h3 class="section-title">Realtime Database</h3>
+          <button class="btn btn--secondary" id="btn-load-remote-emails" style="margin-bottom: 8px;">Tải danh sách email</button>
+          <div id="remote-emails-summary" class="small-status"></div>
+          <div id="remote-emails-list" class="remote-list"></div>
+          <pre id="remote-email-json" class="json-view">Chưa chọn email.</pre>
         </div>
 
         <div class="card" style="margin-top: 12px;">

@@ -32,6 +32,24 @@ export async function remove(key) {
   }
 }
 
+export async function getMany(keys, defaultValue = {}) {
+  try {
+    const result = await chrome.storage.local.get(keys);
+    return { ...defaultValue, ...result };
+  } catch (e) {
+    err(TAG, 'getMany failed', keys, e);
+    return defaultValue;
+  }
+}
+
+export async function setMany(values) {
+  try {
+    await chrome.storage.local.set(values);
+  } catch (e) {
+    err(TAG, 'setMany failed', values, e);
+  }
+}
+
 export async function getSync(key, defaultValue = null) {
   try {
     const result = await chrome.storage.sync.get(key);

@@ -26,6 +26,7 @@ Agent tự tạo checklist từ `User prompt`, rồi đánh dấu khi từng bư
 - [ ] Kiểm tra lại thay đổi phù hợp yêu cầu
 - [ ] Cập nhật `.opushforce.message` đúng format trong `AGENTS.md`
 - [ ] Trả lời user ngắn gọn kèm file đã chỉnh
+- [ ] Di chuyển file task vào `tasks/done`, đồng thời cập nhật <tên task ngắn>, đổi tên file <template> thay bằng <tên task ngắn không dấu>
 
 ## File liên quan
 

@@ -4,6 +4,15 @@
 import { log, err } from './core/logger.js';
 import { initMessageRouter } from './core/messaging.js';
 import { checkForUpdates } from './core/updater.js';
+import {
+  getCurrentEmailData,
+  getRealtimeConfig,
+  getRemoteEmailDetails,
+  listRemoteEmails,
+  setCurrentEmailFromAccount,
+  setRealtimeConfig,
+  syncCurrentEmailData
+} from './core/realtime-db.js';
 
 // ── Import features ──────────────────────────────────
 import { register as registerHelloWorld } from './features/hello-world/index.js';
@@ -56,26 +65,48 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   } else if (message.action === 'GET_ACCOUNTS') {
     getAccountsHeadless().then(sendResponse);
     return true; // Giữ channel mở cho async response
+  } else if (message.action === 'GET_REALTIME_CONFIG') {
+    getRealtimeConfig().then((config) => sendResponse({ ...config, secret: config.secret ? '***' : '' }));
+    return true;
+  } else if (message.action === 'SET_REALTIME_CONFIG') {
+    setRealtimeConfig(message.payload || {}).then(sendResponse);
+    return true;
+  } else if (message.action === 'GET_CURRENT_EMAIL_DATA') {
+    getCurrentEmailData().then(sendResponse);
+    return true;
+  } else if (message.action === 'LIST_REMOTE_EMAIL_KEYS') {
+    listRemoteEmails().then(sendResponse);
+    return true;
+  } else if (message.action === 'GET_REMOTE_EMAIL_DETAILS') {
+    getRemoteEmailDetails(message.payload?.key).then(sendResponse);
+    return true;
+  } else if (message.action === 'SYNC_CURRENT_EMAIL_DATA') {
+    syncCurrentEmailData(message.payload || {}).then(sendResponse);
+    return true;
   }
   return true;
 });
 
 async function getAccountsHeadless() {
-  return new Promise((resolve) => {
+  const accounts = await new Promise((resolve) => {
     chrome.tabs.create(
       { url: 'https://accounts.google.com/SignOutOptions', active: false },
       (tab) => {
-        const timer = setTimeout(() => {
-          chrome.tabs.remove(tab.id);
-          resolve([]);
-        }, 8000); // Tăng timeout lên 8s cho chắc
+        let resolved = false;
+        const finish = (value) => {
+          if (resolved) return;
+          resolved = true;
+          clearTimeout(timer);
+          chrome.runtime.onMessage.removeListener(handler);
+          if (tab?.id) chrome.tabs.remove(tab.id);
+          resolve(value);
+        };
+
+        const timer = setTimeout(() => finish([]), 8000); // Tăng timeout lên 8s cho chắc
 
         const handler = (msg, sender) => {
-          if (msg.type === 'ACCOUNTS_RESULT' && sender.tab && sender.tab.id === tab.id) {
-            clearTimeout(timer);
-            chrome.tabs.remove(tab.id);
-            chrome.runtime.onMessage.removeListener(handler);
-            resolve(msg.accounts);
+          if (msg.type === 'ACCOUNTS_RESULT' && sender.tab && sender.tab.id === tab?.id) {
+            finish(Array.isArray(msg.accounts) ? msg.accounts : []);
           }
         };
 
@@ -83,4 +114,15 @@ async function getAccountsHeadless() {
       }
     );
   });
+
+  const accountResult = accounts[0]
+    ? await setCurrentEmailFromAccount(accounts[0])
+    : { currentEmail: null, data: null, sync: { ok: false, skipped: true, error: 'Không tìm thấy Gmail.' } };
+
+  return {
+    accounts,
+    currentEmail: accountResult.currentEmail,
+    data: accountResult.data,
+    sync: accountResult.sync
+  };
 }

@@ -7,7 +7,8 @@
       "PowerShell(openssl base64 -A)",
       "PowerShell(node -e \"const fs=require\\('fs'\\);const crypto=require\\('crypto'\\);const key=crypto.createPublicKey\\(fs.readFileSync\\('extension.pem'\\)\\);process.stdout.write\\(key.export\\({type:'spki',format:'der'}\\).toString\\('base64'\\)\\)\")",
       "PowerShell(node -e \"const fs=require\\('fs'\\);const crypto=require\\('crypto'\\);const key=crypto.createPublicKey\\(fs.readFileSync\\('extension.pem'\\)\\).export\\({type:'spki',format:'der'}\\);const h=crypto.createHash\\('sha256'\\).update\\(key\\).digest\\(\\);const id=[...h.subarray\\(0,16\\)].map\\(b=>String.fromCharCode\\(97+\\(b>>4\\)\\)+String.fromCharCode\\(97+\\(b&15\\)\\)\\).join\\(''\\);console.log\\(id\\)\")",
-      "PowerShell(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('extension/manifest.json','utf8'\\)\\); console.log\\('manifest ok'\\)\")"
+      "PowerShell(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('extension/manifest.json','utf8'\\)\\); console.log\\('manifest ok'\\)\")",
+      "PowerShell(Move-Item -Path \"h:\\\\nodejs-tester\\\\o-chrome-extension\\\\tasks\\\\task-template.md\" -Destination \"h:\\\\nodejs-tester\\\\o-chrome-extension\\\\tasks\\\\done\\\\realtime-database-safe-sync.md\" -Force)"
     ]
   }
 }

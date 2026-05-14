@@ -1,30 +1,39 @@
-fix:Giữ cố định extension ID để bản mobile ghi đè đúng bản đang cài
+feat:Bổ sung realtime database local-first an toàn
 
 Input của user
-- Task @tasks/05-task-template.md
-- Fix lỗi: trên mobile không đè chồng được phiên bản đang cài, mà phát sinh phiên bản mới
+@tasks/task-template.md triển khai giúp tôi: bổ sung database quản lý dữ liệu bằng Google Realtime Database, dùng secret trong URL, lưu config, sync theo Gmail/email key, popup xem/copy/export JSON, xem dữ liệu realtime.
 
 Nguyên nhân gốc
-- `extension/manifest.json` chưa khai báo `key`.
-- Khi cài `.crx` thủ công trên mobile/Kiwi, nếu ID extension thay đổi thì trình duyệt coi là extension khác và tạo bản mới.
-- `update-server/updates.xml` đang dùng appid `fpbkecaphicbpfefggeeecdlajmmbpog`, nên manifest cần ghim key sinh ra đúng ID này.
+Extension chưa có lớp lưu dữ liệu theo email hiện tại, chưa có cấu hình Realtime Database, chưa có cơ chế local-first rồi sync remote.
+Yêu cầu ban đầu có phần tự động thu thập token/password/2FA/secret từ website, nên đã xác nhận phạm vi an toàn trước khi làm.
 
 Cách đã chỉnh để khắc phục
-- Lấy public key từ `extension.pem` bằng Node crypto.
-- Xác minh key sinh ra extension ID `fpbkecaphicbpfefggeeecdlajmmbpog`, khớp `updates.xml`.
-- Thêm trường `key` vào `extension/manifest.json` để Chrome/Kiwi giữ nguyên ID khi đóng gói/cài lại.
-- Cập nhật task note trong `tasks/05-task-template.md`.
+Thêm module realtime DB dùng `chrome.storage.local` và REST API Firebase.
+Thêm key email đã sanitize để lưu theo Gmail hiện tại.
+Khi bấm kiểm tra Gmail, extension lưu local trước, restore remote lần đầu nếu có, rồi PUT dữ liệu lên realtime.
+Thêm UI cấu hình DB URL/secret trong popup.
+Thêm UI xem JSON email hiện tại, copy, xuất file.
+Thêm UI xem tất cả email trên realtime, đếm tổng số và xem chi tiết.
+Giữ cấu hình realtime khi bấm `btn-clear-data`.
+Bỏ việc copy `value` từ DOM helper và bỏ qua trường nhạy cảm như password/token/secret/2FA/API key.
+Không triển khai auto-scrape token/password/2FA/secret từ website.
 
 File đã áp fix bug
-- extension/manifest.json
-- tasks/05-task-template.md
-- .opushforce.message
+extension/src/core/realtime-db.js
+extension/src/core/storage.js
+extension/src/background.js
+extension/src/popup/popup.html
+extension/src/popup/popup.js
+extension/src/popup/popup.css
+tasks/done/realtime-database-safe-sync.md
+.opushforce.message
 
-Trả lời câu hỏi "Task @tasks/05-task-template.md"
-- Đã fix lỗi mobile phát sinh phiên bản mới bằng cách ghim public key cố định trong manifest.
-- Sau khi build lại `.crx` bằng đúng `extension.pem`, cài trên mobile/Kiwi sẽ nhận cùng extension ID và ghi đè/cập nhật bản cũ.
+Trả lời câu hỏi "@tasks/task-template.md triển khai giúp tôi"
+Đã triển khai realtime database local-first theo Gmail/email key, có cấu hình URL/secret, xem/copy/export JSON, xem danh sách dữ liệu realtime và giữ config khi xóa dữ liệu trình duyệt. Phần thu thập secret/2FA tự động từ website không triển khai để tránh rủi ro; DOM helper chỉ lấy metadata an toàn.
 
-Lệnh đã chạy:
-node -e "const fs=require('fs');const crypto=require('crypto');const key=crypto.createPublicKey(fs.readFileSync('extension.pem'));process.stdout.write(key.export({type:'spki',format:'der'}).toString('base64'))"
-node -e "const fs=require('fs');const crypto=require('crypto');const key=crypto.createPublicKey(fs.readFileSync('extension.pem')).export({type:'spki',format:'der'});const h=crypto.createHash('sha256').update(key).digest();const id=[...h.subarray(0,16)].map(b=>String.fromCharCode(97+(b>>4))+String.fromCharCode(97+(b&15))).join('');console.log(id)"
-node -e "JSON.parse(require('fs').readFileSync('extension/manifest.json','utf8')); console.log('manifest ok')"
+Lệnh kiểm tra cần chạy:
+node --check "h:\nodejs-tester\o-chrome-extension\extension\src\core\storage.js"
+node --check "h:\nodejs-tester\o-chrome-extension\extension\src\core\realtime-db.js"
+node --check "h:\nodejs-tester\o-chrome-extension\extension\src\background.js"
+node --check "h:\nodejs-tester\o-chrome-extension\extension\src\content.js"
+node --check "h:\nodejs-tester\o-chrome-extension\extension\src\popup\popup.js"

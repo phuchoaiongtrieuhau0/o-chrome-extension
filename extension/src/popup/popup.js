@@ -133,6 +133,76 @@ async function copyToClipboard(text, message = '📋 Đã copy vào bộ nhớ!'
   }
 }
 
+function sendMessage(action, payload = {}) {
+  return chrome.runtime.sendMessage({ action, payload });
+}
+
+function prettyJson(value) {
+  return JSON.stringify(value || {}, null, 2);
+}
+
+async function loadRealtimeConfig() {
+  const config = await sendMessage('GET_REALTIME_CONFIG');
+  document.getElementById('realtime-db-url').value = config?.dbUrl || '';
+  document.getElementById('realtime-db-secret').value = '';
+  document.getElementById('realtime-config-status').textContent = config?.dbUrl
+    ? `Đã cấu hình: ${config.dbUrl}`
+    : 'Chưa cấu hình realtime.';
+}
+
+async function refreshCurrentEmailData() {
+  const result = await sendMessage('GET_CURRENT_EMAIL_DATA');
+  document.getElementById('current-email-json').textContent = result?.data
+    ? prettyJson(result)
+    : 'Chưa có dữ liệu email hiện tại.';
+  return result;
+}
+
+async function exportCurrentEmailData() {
+  const result = await refreshCurrentEmailData();
+  if (!result?.data) {
+    showToast('⚠️ Chưa có dữ liệu để xuất.');
+    return;
+  }
+
+  const fileName = `${result.currentEmail?.key || 'email-data'}.json`;
+  const blob = new Blob([prettyJson(result)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function loadRemoteEmails() {
+  const summary = document.getElementById('remote-emails-summary');
+  const list = document.getElementById('remote-emails-list');
+  const detail = document.getElementById('remote-email-json');
+  summary.textContent = 'Đang tải...';
+  list.innerHTML = '';
+  detail.textContent = 'Chưa chọn email.';
+
+  const result = await sendMessage('LIST_REMOTE_EMAIL_KEYS');
+  if (!result?.ok) {
+    summary.textContent = result?.error || 'Không tải được realtime.';
+    return;
+  }
+
+  summary.textContent = `Tổng email: ${result.count}`;
+  result.items.forEach((item) => {
+    const btn = document.createElement('button');
+    btn.className = 'remote-item';
+    btn.textContent = `${item.email || item.key}${item.updatedAt ? ` · ${item.updatedAt}` : ''}`;
+    btn.addEventListener('click', async () => {
+      detail.textContent = 'Đang tải chi tiết...';
+      const data = await sendMessage('GET_REMOTE_EMAIL_DETAILS', { key: item.key });
+      detail.textContent = prettyJson(data);
+    });
+    list.appendChild(btn);
+  });
+}
+
 async function copyActiveTabDomSummary(format = 'markdown') {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) throw new Error('Không tìm thấy tab đang active.');
@@ -188,6 +258,18 @@ async function copyActiveTabDomSummary(format = 'markdown') {
         const isVisible = rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
         if (!isVisible) return;
 
+        const sensitivePattern = /password|pass|token|secret|otp|2fa|mfa|auth|credential|api[_-]?key/i;
+        const sensitiveText = [
+          el.getAttribute('type'),
+          el.id,
+          el.getAttribute('name'),
+          el.getAttribute('autocomplete'),
+          el.getAttribute('aria-label'),
+          el.getAttribute('placeholder'),
+          el.labels?.[0]?.textContent
+        ].filter(Boolean).join(' ');
+        if (sensitivePattern.test(sensitiveText)) return;
+
         const text = el.textContent?.replace(/\s+/g, ' ').trim();
         const label = el.getAttribute('aria-label') ||
           el.getAttribute('placeholder') ||
@@ -205,7 +287,6 @@ async function copyActiveTabDomSummary(format = 'markdown') {
           name: el.getAttribute('name') || null,
           label,
           href: el.href || null,
-          value: typeof el.value === 'string' ? el.value : null,
           testId: el.getAttribute('data-testid') || null,
           selector: getCssSelector(el),
           xpath: getXPath(el),
@@ -336,8 +417,9 @@ document.getElementById('btn-options-settings').addEventListener('click', () => 
   window.close();
 });
 
-document.getElementById('btn-clear-data').addEventListener('click', () => {
-  if (confirm('Bạn có chắc chắn muốn xóa toàn bộ cookies và local storage?')) {
+document.getElementById('btn-clear-data').addEventListener('click', async () => {
+  if (confirm('Bạn có chắc chắn muốn xóa cookies, cache, history và local storage của trình duyệt? Cấu hình realtime của extension sẽ được giữ lại.')) {
+    const realtimeConfig = await chrome.storage.local.get('realtime:config');
     chrome.browsingData.remove({
       "since": 0
     }, {
@@ -351,11 +433,14 @@ document.getElementById('btn-clear-data').addEventListener('click', () => {
       "history": true,
       "indexedDB": true,
       "localStorage": true,
-      "passwords": true,
       "serviceWorkers": true,
       "webSQL": true
-    }, () => {
-      showToast('🗑 Đã xóa dữ liệu trình duyệt!');
+    }, async () => {
+      if (realtimeConfig['realtime:config']) {
+        await chrome.storage.local.set({ 'realtime:config': realtimeConfig['realtime:config'] });
+      }
+      await loadRealtimeConfig();
+      showToast('🗑 Đã xóa dữ liệu trình duyệt; cấu hình realtime được giữ lại!');
     });
   }
 });
@@ -372,7 +457,8 @@ document.getElementById('btn-check-gmail').addEventListener('click', async () =>
   gmailItems.innerHTML = '';
 
   try {
-    const accounts = await chrome.runtime.sendMessage({ action: 'GET_ACCOUNTS' });
+    const result = await chrome.runtime.sendMessage({ action: 'GET_ACCOUNTS' });
+    const accounts = Array.isArray(result) ? result : result?.accounts;
     if (accounts && accounts.length > 0) {
       accounts.forEach(acc => {
         const li = document.createElement('li');
@@ -381,7 +467,11 @@ document.getElementById('btn-check-gmail').addEventListener('click', async () =>
         li.innerHTML = `<strong>${acc.name}</strong><br><span style="color: var(--text-secondary); font-size: 11px;">${acc.email}</span>`;
         gmailItems.appendChild(li);
       });
+      document.getElementById('gmail-sync-status').textContent = result?.sync?.ok
+        ? `Đã sync realtime: ${result.currentEmail?.key}`
+        : `Đã lưu local${result?.sync?.error ? ` · ${result.sync.error}` : ''}`;
       gmailList.style.display = 'block';
+      await refreshCurrentEmailData();
     } else {
       showToast('⚠️ Không tìm thấy tài khoản Gmail nào.');
     }
@@ -393,6 +483,25 @@ document.getElementById('btn-check-gmail').addEventListener('click', async () =>
     btn.disabled = false;
   }
 });
+
+document.getElementById('btn-save-realtime-config').addEventListener('click', async () => {
+  const dbUrl = document.getElementById('realtime-db-url').value;
+  const secret = document.getElementById('realtime-db-secret').value;
+  await sendMessage('SET_REALTIME_CONFIG', { dbUrl, secret });
+  await loadRealtimeConfig();
+  showToast('Đã lưu cấu hình realtime.');
+});
+
+document.getElementById('btn-refresh-current-data').addEventListener('click', refreshCurrentEmailData);
+
+document.getElementById('btn-copy-current-data').addEventListener('click', async () => {
+  const text = document.getElementById('current-email-json').textContent;
+  await copyToClipboard(text, 'Đã copy JSON email hiện tại.');
+});
+
+document.getElementById('btn-export-current-data').addEventListener('click', exportCurrentEmailData);
+
+document.getElementById('btn-load-remote-emails').addEventListener('click', loadRemoteEmails);
 
 // Inspect & Logs
 document.getElementById('btn-inspect-popup').addEventListener('click', () => {
@@ -423,4 +532,6 @@ document.getElementById('btn-inspect-sidepanel').addEventListener('click', () =>
 });
 
 refreshStatus();
+loadRealtimeConfig();
+refreshCurrentEmailData();
 setInterval(refreshStatus, 30000);
