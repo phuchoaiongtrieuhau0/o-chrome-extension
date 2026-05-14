@@ -1,25 +1,24 @@
-fix: bổ sung version vào log và fix lỗi ReferenceError warn
+fix: sửa regex set-version.js để không ghi đè XML declaration
 
 ## Input của user
 
-1. [EXT][updater] parse XML failed ReferenceError: warn is not defined
-2. Hãy bổ sung version trong các dòng log: [EXT][<version>][tag] message
+[EXT][1.5.14.1111][updater] updatecheck tag not found in XML. 
+Content snippet: <?xml version='1.5.14.1111' encoding='UTF-8'?>
 
 ## Nguyên nhân gốc
 
-1. Trong `updater.js` sử dụng hàm `warn` nhưng chưa import từ `logger.js`.
-2. Logger cũ chỉ có prefix `[EXT]`, chưa lấy version từ manifest.
+Trong `scripts/set-version.js`, regex `/version='[^']*'/` quá chung chung, nó đã tìm thấy và thay thế thuộc tính `version` của thẻ khai báo XML (`<?xml version='1.0' ... ?>`) thay vì thẻ `<updatecheck />`. Điều này làm hỏng cấu trúc XML khiến extension không tìm thấy thẻ `updatecheck`.
 
 ## Cách đã chỉnh để khắc phục
 
-- Sửa `extension/src/core/logger.js`: Lấy `chrome.runtime.getManifest().version` để đưa vào prefix. Prefix mới: `[EXT][${version}]`.
-- Sửa `extension/src/core/updater.js`: Import thêm `warn` từ `./logger.js`.
+Sửa regex trong `scripts/set-version.js` thành:
+`/(<updatecheck[\s\S]+?version=['"])([^'"]*)(['"])/`
+Regex này đảm bảo chỉ tìm và thay thế `version` nằm bên trong (hoặc ngay sau) tag `updatecheck`.
 
 ## File đã áp fix bug
 
-- extension/src/core/logger.js
-- extension/src/core/updater.js
+- scripts/set-version.js
 
-## Trả lời câu hỏi "Lỗi warn is not defined và thêm version vào log"
+## Trả lời câu hỏi "Lỗi updatecheck tag not found"
 
-Đã fix xong cả 2. Bây giờ log sẽ có định dạng `[EXT][1.5.14.1105][updater] ...` và hàm `warn` đã hoạt động bình thường.
+Đã tìm ra nguyên nhân! Script tự động tăng version đã ghi nhầm vào phần đầu của file XML (`<?xml version='...' ?>`) làm hỏng file. Mình đã sửa script để nó ghi đúng vào thẻ `<updatecheck />`. Bạn hãy push bản này lên để CI build lại file XML chuẩn nhé.

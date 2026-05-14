@@ -23,6 +23,7 @@ console.log(`manifest.json → ${version}`);
 // Cập nhật updates.xml
 const xmlPath = resolve(__dir, '../update-server/updates.xml');
 let xml = readFileSync(xmlPath, 'utf8');
-xml = xml.replace(/version='[^']*'/, `version='${version}'`);
+// Target đúng version của tag <updatecheck ... />
+xml = xml.replace(/(<updatecheck[\s\S]+?version=['"])([^'"]*)(['"])/, `$1${version}$3`);
 writeFileSync(xmlPath, xml);
 console.log(`updates.xml → ${version}`);
