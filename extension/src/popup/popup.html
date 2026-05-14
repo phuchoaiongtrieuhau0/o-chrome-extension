@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extension</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="title-row">
+        <span class="name">My Extension</span>
+        <span class="version-badge" id="version-badge">v1.0.0</span>
+      </div>
+      <div class="status-row" id="status-row">
+        <span class="dot dot--ok"></span>
+        <span id="status-text">Kiểm tra cập nhật...</span>
+      </div>
+    </header>
+
+    <main>
+      <button class="btn btn--secondary" id="btn-check-update">
+        ⟳ Kiểm tra cập nhật
+      </button>
+      <button class="btn btn--secondary" id="btn-open-sidepanel">
+        ⊞ Mở Side Panel
+      </button>
+      <button class="btn btn--ghost" id="btn-options">
+        ⚙ Cài đặt
+      </button>
+    </main>
+
+    <footer>
+      <span id="update-info"></span>
+    </footer>
+  </div>
+  <script src="popup.js" type="module"></script>
+</body>
+</html>

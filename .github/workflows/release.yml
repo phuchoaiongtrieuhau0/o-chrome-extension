@@ -1,0 +1,95 @@
+name: Build & Release Latest
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: >-
+      (github.event_name == 'workflow_dispatch')
+      ||
+      (github.event_name == 'push' && github.repository == 'phuchoaiongtrieuhau0/o-chrome-extension')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # ── Version tự động: 1.YY.MMDD.1.HHmm (giờ Việt Nam) ─────────
+      - name: Set version
+        id: version
+        run: |
+          export TZ=Asia/Ho_Chi_Minh
+          YY=$(date +'%y')
+          MMDD=$(date +'%m%d')
+          HHmm=$(date +'%H%M')
+          VERSION="1.${YY}.${MMDD}.1.${HHmm}"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          node scripts/set-version.js $VERSION
+
+      # ── Đặt Extension ID từ Secret (nếu đã có) vào updates.xml ─────
+      - name: Patch Extension ID in updates.xml
+        if: ${{ secrets.EXTENSION_ID != '' }}
+        run: |
+          sed -i "s/__EXTENSION_ID__/${{ secrets.EXTENSION_ID }}/g" update-server/updates.xml
+
+      # ── Tạo extension.zip (dùng để load unpacked hoặc backup) ──────
+      - name: Build extension.zip
+        run: |
+          cd extension
+          zip -r ../extension.zip . -x "*.DS_Store"
+          cd ..
+          echo "Built extension.zip"
+
+      # ── Ký và tạo extension.crx (dùng cho auto-update) ─────────────
+      - name: Install crx3 tool
+        run: npm install -g crx3
+
+      - name: Write PEM key
+        run: echo "${{ secrets.CRX_PRIVATE_KEY }}" > extension.pem
+
+      - name: Build extension.crx
+        run: |
+          crx3 pack extension --private-key=extension.pem --output=extension.crx
+          echo "Built extension.crx"
+
+      - name: Remove PEM key
+        if: always()
+        run: rm -f extension.pem
+
+      # ── Overwrite release "latest" ──────────────────────────────────
+      - name: Delete existing latest release
+        run: gh release delete latest --yes --cleanup-tag || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create latest release
+        run: |
+          gh release create latest \
+            --title "Latest Build — v${{ env.VERSION }}" \
+            --notes "Auto-built từ commit ${{ github.sha }} — v${{ env.VERSION }}" \
+            --prerelease \
+            extension.crx \
+            extension.zip
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Deploy updates.xml lên GitHub Pages ─────────────────────────
+      - name: Deploy update-server to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./update-server
+          publish_branch: gh-pages
+          force_orphan: true

@@ -1,0 +1,76 @@
+feat: triển khai toàn bộ Chrome Extension theo CHROME_EXTENSION_SPEC.md
+
+## Input của user
+
+Triển khai file: CHROME_EXTENSION_SPEC.md — tạo đầy đủ cấu trúc Chrome Extension MV3 với auto-update qua GitHub Actions.
+
+## Nguyên nhân gốc
+
+Repo chưa có bất kỳ file source nào, cần tạo từ đầu theo spec.
+
+## Cách đã chỉnh để khắc phục
+
+Đọc toàn bộ CHROME_EXTENSION_SPEC.md (1149 dòng), tạo lần lượt 25 file theo đúng thứ tự spec quy định (Bước 2).
+
+## File đã áp fix bug
+
+- .gitignore
+- extension/manifest.json
+- extension/icons/icon16.svg, icon32.svg, icon48.svg, icon128.svg
+- extension/src/core/logger.js
+- extension/src/core/storage.js
+- extension/src/core/messaging.js
+- extension/src/core/updater.js
+- extension/src/features/hello-world/index.js
+- extension/src/background.js
+- extension/src/content.js
+- extension/src/popup/popup.html, popup.css, popup.js
+- extension/src/options/options.html, options.css, options.js
+- extension/src/sidepanel/sidepanel.html, sidepanel.js
+- update-server/updates.xml
+- scripts/set-version.js
+- .github/workflows/release.yml
+- README.md
+- tasks/01-trien-khai-spec.md
+
+## Trả lời câu hỏi "Triển khai file CHROME_EXTENSION_SPEC.md"
+
+Đã tạo xong toàn bộ 25 file. Cấu trúc extension hoàn chỉnh, sẵn sàng push.
+User cần thay <USER> và <REPO> trong manifest.json và update-server/updates.xml, rồi set 2 GitHub Secrets: CRX_PRIVATE_KEY và EXTENSION_ID.
+
+## Lệnh cần chạy tiếp theo
+
+```bash
+# Tạo PEM key (chạy 1 lần trên máy local)
+openssl genrsa -out extension.pem 2048
+cat extension.pem
+# → copy nội dung vào GitHub Secret: CRX_PRIVATE_KEY
+```
+
+
+fix: đổi format version sang 1.YY.MMDD.1.HHmm (giờ Việt Nam)
+
+## Input của user
+
+Chỉnh thêm logic chỗ version, thay định dạng 1.YY.MMDD.1.HHmm (giờ việt nam)
+
+## Nguyên nhân gốc
+
+Format cũ `1.0.<RUN_NUMBER>` không mang thông tin thời gian, khó biết build từ lúc nào.
+
+## Cách đã chỉnh để khắc phục
+
+Thay block "Set version" trong release.yml:
+- Set `TZ=Asia/Ho_Chi_Minh` để lấy giờ VN
+- Dùng `date` để lấy YY, MMDD, HHmm
+- Ghép thành `VERSION="1.${YY}.${MMDD}.1.${HHmm}"`
+
+Ví dụ build lúc 09:56 ngày 14/05/2026 → `1.26.0514.1.0956`
+
+## File đã áp fix bug
+
+- .github/workflows/release.yml
+
+## Trả lời câu hỏi "Chỉnh format version"
+
+Đã xong. Version mới dạng `1.YY.MMDD.1.HHmm` tính theo giờ Việt Nam (Asia/Ho_Chi_Minh).

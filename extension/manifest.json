@@ -1,0 +1,109 @@
+{
+  "manifest_version": 3,
+  "name": "My Personal Extension",
+  "short_name": "MyExt",
+  "description": "Personal automation extension",
+  "version": "1.0.0",
+  "update_url": "https://phuchoaiongtrieuhau0.github.io/o-chrome-extension/updates.xml",
+
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.svg",
+      "32": "icons/icon32.svg",
+      "48": "icons/icon48.svg",
+      "128": "icons/icon128.svg"
+    },
+    "default_title": "My Extension"
+  },
+
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+
+  "options_page": "src/options/options.html",
+
+  "side_panel": {
+    "default_path": "src/sidepanel/sidepanel.html"
+  },
+
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "windows",
+    "history",
+    "bookmarks",
+    "storage",
+    "unlimitedStorage",
+    "cookies",
+    "sessions",
+    "scripting",
+    "webNavigation",
+    "webRequest",
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess",
+    "declarativeNetRequestFeedback",
+    "downloads",
+    "notifications",
+    "alarms",
+    "contextMenus",
+    "clipboardRead",
+    "clipboardWrite",
+    "idle",
+    "management",
+    "sidePanel",
+    "offscreen",
+    "tabGroups",
+    "readingList",
+    "search",
+    "topSites",
+    "browsingData",
+    "privacy",
+    "proxy",
+    "fontSettings",
+    "contentSettings",
+    "debugger",
+    "pageCapture",
+    "tabCapture",
+    "desktopCapture",
+    "tts",
+    "ttsEngine",
+    "gcm",
+    "geolocation",
+    "identity",
+    "nativeMessaging",
+    "processes",
+    "system.cpu",
+    "system.memory",
+    "system.display",
+    "system.storage",
+    "power",
+    "webAuthenticationProxy"
+  ],
+
+  "host_permissions": ["<all_urls>"],
+
+  "web_accessible_resources": [
+    {
+      "resources": ["src/content.js", "icons/*"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+
+  "icons": {
+    "16": "icons/icon16.svg",
+    "32": "icons/icon32.svg",
+    "48": "icons/icon48.svg",
+    "128": "icons/icon128.svg"
+  }
+}
