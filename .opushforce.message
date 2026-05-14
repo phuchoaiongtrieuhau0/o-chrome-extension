@@ -1,23 +1,25 @@
-fix: cải thiện khả năng parse updates.xml trong updater.js
+fix: bổ sung version vào log và fix lỗi ReferenceError warn
 
 ## Input của user
 
-[EXT][updater] checkForUpdates failed Error: Could not parse version from XML
+1. [EXT][updater] parse XML failed ReferenceError: warn is not defined
+2. Hãy bổ sung version trong các dòng log: [EXT][<version>][tag] message
 
 ## Nguyên nhân gốc
 
-`DOMParser` với `application/xml` và `querySelector` có thể bị lỗi nếu file XML được server trả về với MIME type khác hoặc có namespace phức tạp. Nếu URL bị redirect hoặc trả về HTML (ví dụ trang 404 của GitHub), `querySelector` sẽ không tìm thấy tag `updatecheck`.
+1. Trong `updater.js` sử dụng hàm `warn` nhưng chưa import từ `logger.js`.
+2. Logger cũ chỉ có prefix `[EXT]`, chưa lấy version từ manifest.
 
 ## Cách đã chỉnh để khắc phục
 
-- Chuyển `parseFromString` sang mode `text/xml` để linh hoạt hơn.
-- Dùng `getElementsByTagName('updatecheck')` thay cho `querySelector` để tránh vấn đề namespace.
-- Thêm log `warn` nội dung XML nếu parse thất bại để dễ debug.
+- Sửa `extension/src/core/logger.js`: Lấy `chrome.runtime.getManifest().version` để đưa vào prefix. Prefix mới: `[EXT][${version}]`.
+- Sửa `extension/src/core/updater.js`: Import thêm `warn` từ `./logger.js`.
 
 ## File đã áp fix bug
 
+- extension/src/core/logger.js
 - extension/src/core/updater.js
 
-## Trả lời câu hỏi "Lỗi parse version từ XML"
+## Trả lời câu hỏi "Lỗi warn is not defined và thêm version vào log"
 
-Đã cải thiện code parse XML để ổn định hơn. Nếu bạn vẫn gặp lỗi này, hãy kiểm tra tab Console để xem snippet nội dung XML mà extension nhận được (nó sẽ hiện sau dòng `updatecheck tag not found`). Nếu snippet là mã HTML, có nghĩa là URL `updates.xml` vẫn đang bị 404 hoặc lỗi server.
+Đã fix xong cả 2. Bây giờ log sẽ có định dạng `[EXT][1.5.14.1105][updater] ...` và hàm `warn` đã hoạt động bình thường.

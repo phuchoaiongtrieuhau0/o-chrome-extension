@@ -2,7 +2,7 @@
 // URL updates.xml lấy từ manifest.update_url (Chrome inject sẵn khi dùng update_url)
 // Dùng thủ công: import { checkForUpdates, getUpdateStatus } from '../core/updater.js'
 
-import { log, err } from './logger.js';
+import { log, warn, err } from './logger.js';
 import { get, set } from './storage.js';
 
 const TAG = 'updater';
