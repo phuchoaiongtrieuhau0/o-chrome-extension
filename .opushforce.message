@@ -1,21 +1,22 @@
-fix: sửa lỗi duplicate id khi tạo context menu
+feat:Cập nhật UI Popup hiện đại với hệ thống Tab
 
-## Input của user
+Input của user:
+Thay đổi giao diện pop-up đẹp hơn, hiện đại hơn. Tổ chức thành nhiều tab (Home, Quản trị). Tab Quản trị có link check update, download ZIP/CRX (chỉ hiện tên file, có nút copy link và tải). Giữ nguyên Header (tên, version, link quản lý) ở tất cả các tab.
 
-Unchecked runtime.lastError: Cannot create item with duplicate id hello-world
+Nguyên nhân gốc:
+Yêu cầu nâng cấp trải nghiệm người dùng và tổ chức lại các chức năng quản trị vào khu vực riêng biệt để tránh rối mắt.
 
-## Nguyên nhân gốc
+Cách đã chỉnh để khắc phục:
+- Thiết kế lại CSS với hệ thống màu sắc hiện đại, hiệu ứng glassmorphism và animation mượt mà.
+- Cấu trúc lại HTML sử dụng layout Tab-based (Home 🏠 và Quản trị 🛡).
+- Header được làm cố định (sticky) chứa thông tin phiên bản và trạng thái kết nối.
+- Tab Quản trị: Thêm danh sách file (zip, crx) với chức năng Copy link (vào clipboard) và Tải về trực tiếp.
+- Cập nhật JS để xử lý chuyển tab, cập nhật trạng thái runtime và thông báo copy thành công.
 
-Trong Manifest V3, Service Worker có thể bị tắt và khởi động lại nhiều lần (hoặc khi bạn reload extension). Mỗi lần khởi động, hàm `register()` của các feature lại gọi `chrome.contextMenus.create`. Nếu ID đã tồn tại, Chrome sẽ báo lỗi duplicate.
+File đã áp fix bug:
+- extension/src/popup/popup.html
+- extension/src/popup/popup.css
+- extension/src/popup/popup.js
 
-## Cách đã chỉnh để khắc phục
-
-Thêm lệnh `chrome.contextMenus.removeAll()` vào đầu hàm `initFeatures()` trong `background.js`. Việc này đảm bảo dọn dẹp sạch sẽ các menu cũ trước khi đăng ký các feature mới, tránh xung đột ID.
-
-## File đã áp fix bug
-
-- extension/src/background.js
-
-## Trả lời câu hỏi "Lỗi duplicate id hello-world"
-
-Đã fix xong! Mình đã thêm bước dọn dẹp menu cũ trước khi tạo mới. Bây giờ mỗi lần extension khởi động lại sẽ không còn bị báo lỗi duplicate ID nữa.
+Trả lời câu hỏi "Thay đổi phần giao diện của pop-up":
+Đã hoàn thành việc thay đổi giao diện Popup. Hiện tại extension đã có UI mới chuyên nghiệp hơn, phân chia rõ ràng giữa chức năng người dùng và quản trị viên, hỗ trợ đầy đủ các thao tác tải bản cập nhật và copy link release từ GitHub.

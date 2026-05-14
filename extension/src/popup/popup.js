@@ -1,47 +1,82 @@
 import { checkForUpdates, getUpdateStatus } from '../core/updater.js';
 
 const manifest = chrome.runtime.getManifest();
-
 document.getElementById('version-badge').textContent = `v${manifest.version}`;
+
+// Tab Handling
+const tabBtns = document.querySelectorAll('.tab-btn');
+const tabContents = document.querySelectorAll('.tab-content');
+
+tabBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.tab;
+    
+    tabBtns.forEach(b => b.classList.remove('active'));
+    tabContents.forEach(c => c.classList.remove('active'));
+    
+    btn.classList.add('active');
+    document.getElementById(`tab-${target}`).classList.add('active');
+  });
+});
 
 async function refreshStatus() {
   const status = await getUpdateStatus();
   const dot = document.querySelector('.dot');
   const statusText = document.getElementById('status-text');
   const updateInfo = document.getElementById('update-info');
-  const updateActions = document.getElementById('update-actions');
 
   if (!status.checkedAt) {
     dot.className = 'dot dot--loading';
-    statusText.textContent = 'Chưa kiểm tra lần nào';
-    updateActions.style.display = 'none';
+    statusText.textContent = 'Chưa kiểm tra cập nhật';
     return;
   }
 
   if (status.hasUpdate) {
     dot.className = 'dot dot--update';
-    statusText.textContent = `Có phiên bản mới: v${status.latestVersion}`;
+    statusText.textContent = `Có bản v${status.latestVersion}`;
     updateInfo.textContent = 'Vào chrome://extensions → bấm ⟳ để cập nhật';
-    updateActions.style.display = 'flex';
   } else {
     dot.className = 'dot dot--ok';
-    statusText.textContent = 'Đang dùng phiên bản mới nhất';
+    statusText.textContent = 'Đang ở bản mới nhất';
     const ago = status.checkedAt
       ? Math.round((Date.now() - status.checkedAt) / 60000) + ' phút trước'
       : '';
     updateInfo.textContent = `Kiểm tra lúc: ${ago}`;
-    updateActions.style.display = 'none';
   }
 }
 
 function getDownloadUrl(format) {
-  // Lấy repo URL từ update_url (VD: https://user.github.io/repo/updates.xml)
   const updateUrl = manifest.update_url;
+  if (!updateUrl) return null;
   const match = updateUrl.match(/https:\/\/([^.]+)\.github\.io\/([^/]+)/);
   if (!match) return null;
   const [_, user, repo] = match;
   return `https://github.com/${user}/${repo}/releases/latest/download/extension.${format}`;
 }
+
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    const originalText = document.getElementById('status-text').textContent;
+    document.getElementById('status-text').textContent = '📋 Đã copy link!';
+    setTimeout(() => {
+      document.getElementById('status-text').textContent = originalText;
+    }, 2000);
+  } catch (err) {
+    console.error('Failed to copy: ', err);
+  }
+}
+
+// Event Listeners
+document.getElementById('btn-copy-zip').addEventListener('click', () => {
+  const url = getDownloadUrl('zip');
+  if (url) copyToClipboard(url);
+});
+
+document.getElementById('btn-copy-crx').addEventListener('click', () => {
+  const url = getDownloadUrl('crx');
+  if (url) copyToClipboard(url);
+});
 
 document.getElementById('btn-download-zip').addEventListener('click', () => {
   const url = getDownloadUrl('zip');
@@ -59,7 +94,6 @@ document.getElementById('link-manage-ext').addEventListener('click', (e) => {
   let url = 'chrome://extensions';
   if (ua.includes('kiwi')) url = 'kiwi://extensions';
   else if (ua.includes('edg/')) url = 'edge://extensions';
-  
   chrome.tabs.create({ url });
 });
 
@@ -74,17 +108,19 @@ document.getElementById('btn-choose-file').addEventListener('click', () => {
 document.getElementById('file-input').addEventListener('change', (e) => {
   if (e.target.files.length > 0) {
     const fileName = e.target.files[0].name;
-    alert(`Đã chọn: ${fileName}\n\nLƯU Ý: Extension không thể tự ghi đè file hệ thống.\nBạn hãy giải nén nội dung file này vào thư mục extension hiện tại, sau đó bấm nút "Reload Extension" màu xanh.`);
+    alert(`Đã chọn: ${fileName}\n\nLƯU Ý: Extension không thể tự ghi đè file hệ thống.\nHãy giải nén nội dung file này vào thư mục extension hiện tại, sau đó bấm nút "Reload Extension".`);
   }
 });
 
 document.getElementById('btn-check-update').addEventListener('click', async () => {
   const btn = document.getElementById('btn-check-update');
-  btn.textContent = '⟳ Đang kiểm tra...';
+  const span = btn.querySelector('span');
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '<span>⟳</span> Đang check...';
   btn.disabled = true;
   await checkForUpdates();
   await refreshStatus();
-  btn.textContent = '⟳ Kiểm tra cập nhật';
+  btn.innerHTML = originalText;
   btn.disabled = false;
 });
 
@@ -100,3 +136,4 @@ document.getElementById('btn-options').addEventListener('click', () => {
 });
 
 refreshStatus();
+setInterval(refreshStatus, 30000);

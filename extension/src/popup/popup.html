@@ -13,37 +13,75 @@
         <span class="name">My Extension</span>
         <span class="version-badge" id="version-badge">v1.0.0</span>
       </div>
-      <div class="status-row" id="status-row">
-        <span class="dot dot--ok"></span>
-        <span id="status-text">Kiểm tra cập nhật...</span>
-        <a href="#" id="link-manage-ext" style="margin-left: auto; font-size: 10px; color: #818cf8; text-decoration: underline;">Quản lý Extension</a>
+      <div class="status-row">
+        <span class="dot dot--loading"></span>
+        <span id="status-text">Đang tải...</span>
+        <a href="#" id="link-manage-ext">Quản lý</a>
       </div>
     </header>
 
-    <main>
-      <button class="btn btn--secondary" id="btn-check-update">
-        ⟳ Kiểm tra cập nhật
-      </button>
+    <nav class="tabs-nav">
+      <button class="tab-btn active" data-tab="home">🏠 Home</button>
+      <button class="tab-btn" data-tab="admin">🛡 Quản trị</button>
+    </nav>
 
-      <div id="update-actions" style="display: none; margin-top: 8px; padding-top: 8px; border-top: 1px solid #1e1e28; flex-direction: column; gap: 6px;">
-        <div style="font-size: 11px; color: #818cf8; margin-bottom: 4px;">Tải bản mới:</div>
-        <div style="display: flex; gap: 6px;">
-          <button class="btn btn--secondary" id="btn-download-zip" style="flex: 1; padding: 5px;">📦 ZIP</button>
-          <button class="btn btn--secondary" id="btn-download-crx" style="flex: 1; padding: 5px;">💎 CRX</button>
+    <main>
+      <!-- Tab Home -->
+      <div id="tab-home" class="tab-content active">
+        <div class="card">
+          <p style="font-size: 13px; margin-bottom: 12px; color: var(--text-secondary);">
+            Chào mừng bạn đến với My Extension. Chọn chức năng từ menu để bắt đầu.
+          </p>
+          <button class="btn btn--primary" id="btn-open-sidepanel">
+            <span>⊞</span> Mở Side Panel
+          </button>
         </div>
-        <div style="margin-top: 4px; display: flex; flex-direction: column; gap: 4px;">
-           <button class="btn btn--ghost" id="btn-choose-file">📁 Chọn file ZIP để cập nhật...</button>
-           <input type="file" id="file-input" style="display: none;" accept=".zip">
-           <button class="btn btn--ghost" id="btn-reload" style="border-color: #22c55e; color: #22c55e;">⚡ Reload Extension</button>
-        </div>
+        <button class="btn btn--ghost" id="btn-options" style="margin-top: 8px;">
+          <span>⚙</span> Cài đặt
+        </button>
       </div>
 
-      <button class="btn btn--secondary" id="btn-open-sidepanel">
-        ⊞ Mở Side Panel
-      </button>
-      <button class="btn btn--ghost" id="btn-options">
-        ⚙ Cài đặt
-      </button>
+      <!-- Tab Admin -->
+      <div id="tab-admin" class="tab-content">
+        <div class="card">
+          <h3 class="section-title">Cập nhật hệ thống</h3>
+          <button class="btn btn--secondary" id="btn-check-update" style="margin-bottom: 12px;">
+            <span>⟳</span> Kiểm tra bản mới
+          </button>
+          
+          <div id="update-files-list" style="display: flex; flex-direction: column; gap: 8px;">
+            <div class="update-item">
+              <div class="file-info">
+                <span class="file-name">extension.zip</span>
+              </div>
+              <div class="action-btns">
+                <button class="mini-btn" id="btn-copy-zip" title="Copy link">📋</button>
+                <button class="mini-btn" id="btn-download-zip" title="Tải về">📥</button>
+              </div>
+            </div>
+            <div class="update-item">
+              <div class="file-info">
+                <span class="file-name">extension.crx</span>
+              </div>
+              <div class="action-btns">
+                <button class="mini-btn" id="btn-copy-crx" title="Copy link">📋</button>
+                <button class="mini-btn" id="btn-download-crx" title="Tải về">📥</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 12px;">
+          <h3 class="section-title">Công cụ</h3>
+          <button class="btn btn--ghost" id="btn-choose-file" style="margin-bottom: 8px; border-style: dashed;">
+            <span>📁</span> Cài từ file ZIP
+          </button>
+          <input type="file" id="file-input" style="display: none;" accept=".zip">
+          <button class="btn btn--ghost" id="btn-reload" style="color: var(--success); border-color: rgba(34, 197, 94, 0.2);">
+            <span>⚡</span> Reload Extension
+          </button>
+        </div>
+      </div>
     </main>
 
     <footer>
