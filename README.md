@@ -2,19 +2,38 @@
 
 Extension cá nhân để tự động hóa công việc hằng ngày.
 
-## Cài đặt lần đầu
+## Cài đặt & Tự động cập nhật (Windows)
 
-1. Vào [Releases](../../releases/latest) → tải `extension.crx`
-2. Mở `chrome://extensions` → bật **Developer mode**
-3. Kéo thả file `.crx` vào trang → bấm "Add extension"
-4. Ghi lại **Extension ID** (chuỗi 32 ký tự dưới icon extension)
-5. Vào repo → Settings → Secrets → cập nhật `EXTENSION_ID` = ID vừa ghi
+Do Chrome chặn cài file `.crx` trực tiếp, bạn nên dùng cơ chế **Registry** để Chrome tự cài và tự cập nhật (không bị hiện cảnh báo Developer mode):
+
+1. **Lấy ID**: Cài thử bản folder ("Load unpacked") một lần để lấy **Extension ID**.
+2. **Tạo file `.reg`**: Tạo file `install.reg` với nội dung:
+   ```reg
+   Windows Registry Editor Version 5.00
+   [HKEY_CURRENT_USER\Software\Google\Chrome\Extensions\<ID_CUA_BAN>]
+   "update_url"="https://phuchoaiongtrieuhau0.github.io/o-chrome-extension/updates.xml"
+   ```
+3. **Chạy file `.reg`**: Click đúp -> Yes -> Khởi động lại Chrome.
+4. **Xóa bản cũ**: Xóa bản "Load unpacked" đi. Chrome sẽ tự tải bản chính thức từ GitHub về.
+
+## Cài đặt thủ công (cho Developer)
+1. Vào [Releases](../../releases/latest) → tải `extension.zip`
+2. Giải nén vào một folder.
+3. Mở `chrome://extensions` → bật **Developer mode**
+4. Chọn **Load unpacked** → chọn folder vừa giải nén.
+   *Lưu ý: Cách này không hỗ trợ tự động cập nhật của Chrome.*
+
+## Cài đặt trên Android (Kiwi Browser)
+
+1. Tải **Kiwi Browser** từ Play Store.
+2. Tải file **`extension.crx`** từ GitHub Release (không dùng file .zip nếu muốn tự động cập nhật).
+3. Mở Kiwi, vào menu (3 chấm) -> **Extensions**.
+4. Bật **Developer mode**.
+5. Bấm **+ (from .zip/.crx/.user.js)** -> chọn file `extension.crx` vừa tải.
+6. **Tự động cập nhật**: Khi cài bằng file `.crx`, Kiwi sẽ tự động kiểm tra và cập nhật bản mới từ GitHub y hệt trên máy tính.
 
 ## Cập nhật
-
-**Tự động**: Chrome định kỳ kiểm tra và tự cập nhật.
-
-**Thủ công**: `chrome://extensions` → bấm nút ⟳ "Update".
+...
 
 ## Thêm tính năng mới
 

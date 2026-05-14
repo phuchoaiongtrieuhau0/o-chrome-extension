@@ -23,6 +23,20 @@
       <button class="btn btn--secondary" id="btn-check-update">
         ⟳ Kiểm tra cập nhật
       </button>
+
+      <div id="update-actions" style="display: none; margin-top: 8px; padding-top: 8px; border-top: 1px solid #1e1e28; flex-direction: column; gap: 6px;">
+        <div style="font-size: 11px; color: #818cf8; margin-bottom: 4px;">Tải bản mới:</div>
+        <div style="display: flex; gap: 6px;">
+          <button class="btn btn--secondary" id="btn-download-zip" style="flex: 1; padding: 5px;">📦 ZIP</button>
+          <button class="btn btn--secondary" id="btn-download-crx" style="flex: 1; padding: 5px;">💎 CRX</button>
+        </div>
+        <div style="margin-top: 4px; display: flex; flex-direction: column; gap: 4px;">
+           <button class="btn btn--ghost" id="btn-choose-file">📁 Chọn file ZIP để cập nhật...</button>
+           <input type="file" id="file-input" style="display: none;" accept=".zip">
+           <button class="btn btn--ghost" id="btn-reload" style="border-color: #22c55e; color: #22c55e;">⚡ Reload Extension</button>
+        </div>
+      </div>
+
       <button class="btn btn--secondary" id="btn-open-sidepanel">
         ⊞ Mở Side Panel
       </button>
