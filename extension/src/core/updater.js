@@ -62,7 +62,7 @@ export async function checkForUpdates() {
     if (hasUpdate) {
       chrome.notifications.create('ext-update', {
         type: 'basic',
-        iconUrl: chrome.runtime.getURL('icons/icon48.svg'),
+        iconUrl: chrome.runtime.getURL('icons/icon48.png'),
         title: 'Có phiên bản mới!',
         message: `Cập nhật từ v${currentVersion} lên v${latestVersion}. Vào chrome://extensions để cập nhật.`,
       });

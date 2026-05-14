@@ -1,25 +1,26 @@
-fix: sửa lỗi mobile (webAuthenticationProxy) và lỗi DOMParser trong Service Worker
+fix: sửa lỗi không hiện thông báo do định dạng icon SVG
 
 ## Input của user
 
-1. 'webAuthenticationProxy' is not allowed for specified platform.
-2. [EXT][...][updater] parse XML failed ReferenceError: DOMParser is not defined
+Uncaught (in promise) Error: Unable to download all specified images. (Khi mở Hello world)
 
 ## Nguyên nhân gốc
 
-1. Permission `webAuthenticationProxy` không được Chrome hỗ trợ trên nền tảng Android (Kiwi Browser).
-2. `DOMParser` là API của DOM (Window), trong khi `background.js` chạy trên Service Worker (không có Window/DOM) nên bị báo lỗi `ReferenceError`.
+Hàm `chrome.notifications.create` trên nhiều nền tảng (bao gồm cả một số bản Chrome Desktop và Android) không hỗ trợ định dạng **SVG** làm `iconUrl`. Khi truyền file `.svg`, hệ thống báo lỗi không tải được ảnh.
 
 ## Cách đã chỉnh để khắc phục
 
-- **Manifest**: Xóa `webAuthenticationProxy` để extension chạy được trên mobile.
-- **Updater**: Sửa hàm `parseVersion` trong `updater.js`, dùng **Regex** thay cho `DOMParser`. Regex hoạt động được trong cả Service Worker và UI.
+- **Tạo Icon PNG**: Sử dụng AI để tạo một bộ icon mới định dạng **PNG** (16, 32, 48, 128 px).
+- **Cập nhật Manifest**: Thay đổi toàn bộ khai báo icon từ `.svg` sang `.png`.
+- **Cập nhật Code**: Sửa `iconUrl` trong `updater.js` và `features/hello-world/index.js` trỏ về file `.png`.
 
 ## File đã áp fix bug
 
 - extension/manifest.json
 - extension/src/core/updater.js
+- extension/src/features/hello-world/index.js
+- extension/icons/*.png (mới)
 
-## Trả lời câu hỏi "Lỗi trên mobile"
+## Trả lời câu hỏi "Lỗi Unable to download all specified images"
 
-Đã fix xong lỗi trên mobile! Mình đã xóa quyền truy cập không tương thích và thay thế cơ chế parse XML bằng Regex để chạy được trong Service Worker (nơi không có DOMParser). Bạn hãy push bản này lên là mobile sẽ chạy mượt nhé.
+Đã fix xong! Nguyên nhân là do Chrome không hỗ trợ ảnh SVG trong thông báo (Notifications). Mình đã thay toàn bộ icon sang định dạng PNG và cập nhật code tương ứng. Bây giờ bạn nhấn "Hello World" sẽ hiện thông báo bình thường.

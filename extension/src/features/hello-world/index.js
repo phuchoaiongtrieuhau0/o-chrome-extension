@@ -28,7 +28,7 @@ export async function register() {
     const version = chrome.runtime.getManifest().version;
     await chrome.notifications.create(`${FEATURE_NAME}-notify`, {
       type: 'basic',
-      iconUrl: chrome.runtime.getURL('icons/icon48.svg'),
+      iconUrl: chrome.runtime.getURL('icons/icon48.png'),
       title: 'Hello World!',
       message: `Extension đang chạy tốt — v${version}`,
     });
