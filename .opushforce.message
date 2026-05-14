@@ -1,22 +1,26 @@
-fix: bỏ --prerelease khỏi gh release create
+fix: đổi định dạng version thành YY.MMDD.1HHmm để tương thích với Chrome
 
 ## Input của user
 
-URL /releases/latest/download/extension.crx trả về 404 dù build thành công.
+Required value 'version' is missing or invalid. It must be between 1-4 dot-separated integers each between 0 and 65536.
+Hãy đổi lại thành YY.MMDD.1HHmm 
 
 ## Nguyên nhân gốc
 
-GitHub quy định: `/releases/latest/download/` chỉ redirect đến **stable release** mới nhất.
-Flag `--prerelease` khiến release bị đánh dấu là prerelease → GitHub bỏ qua khi resolve "latest" → 404.
+Chrome Extension chỉ cho phép tối đa 4 phần trong version. Định dạng cũ `1.YY.MMDD.1.HHmm` có 5 phần nên bị Chrome từ chối.
 
 ## Cách đã chỉnh để khắc phục
 
-Bỏ `--prerelease` khỏi lệnh `gh release create latest`.
+- Sửa `.github/workflows/release.yml`: Đổi logic ghép VERSION thành `${YY}.${MMDD}.1${HHmm}`.
+- Sửa `scripts/set-version.js`: Cập nhật comment ví dụ. Regex cũ đã hỗ trợ 3 phần số nên không cần đổi.
+
+Ví dụ: `26.0514.10956` (3 phần, hợp lệ).
 
 ## File đã áp fix bug
 
 - .github/workflows/release.yml
+- scripts/set-version.js
 
-## Trả lời câu hỏi "extension.crx 404 dù build xong"
+## Trả lời câu hỏi "chỉnh định dạng version mới"
 
-Đã fix. Push lại, URL /releases/latest/download/extension.crx sẽ hoạt động.
+Đã đổi thành `YY.MMDD.1HHmm`. Định dạng này có 3 phần, tuân thủ đúng quy định của Chrome (tối đa 4 phần, mỗi phần < 65536).

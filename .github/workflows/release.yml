@@ -31,7 +31,7 @@ jobs:
         with:
           node-version: "20"
 
-      # ── Version tự động: 1.YY.MMDD.1.HHmm (giờ Việt Nam) ─────────
+      # ── Version tự động: YY.MMDD.1HHmm (giờ Việt Nam) ─────────
       - name: Set version
         id: version
         run: |
@@ -39,7 +39,7 @@ jobs:
           YY=$(date +'%y')
           MMDD=$(date +'%m%d')
           HHmm=$(date +'%H%M')
-          VERSION="1.${YY}.${MMDD}.1.${HHmm}"
+          VERSION="${YY}.${MMDD}.1${HHmm}"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           node scripts/set-version.js $VERSION

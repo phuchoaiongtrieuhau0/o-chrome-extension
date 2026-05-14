@@ -1,5 +1,5 @@
 // Node.js script — cập nhật version vào manifest.json và updates.xml
-// Chạy: node scripts/set-version.js 1.26.0514.1.0956
+// Chạy: node scripts/set-version.js 26.0514.10956
 
 import { readFileSync, writeFileSync } from 'fs';
 import { resolve, dirname } from 'path';
