@@ -60,7 +60,7 @@ jobs:
 
       - name: Build extension.crx
         run: |
-          crx3 pack extension --private-key=extension.pem --output=extension.crx
+          crx3 extension --keyPath=extension.pem --crxPath=extension.crx
           echo "Built extension.crx"
 
       - name: Remove PEM key

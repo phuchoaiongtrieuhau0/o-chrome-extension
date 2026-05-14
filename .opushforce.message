@@ -1,21 +1,26 @@
-fix: sửa lệnh ghi PEM key trong release.yml
+fix: sửa syntax lệnh crx3 trong release.yml
 
 ## Input của user
 
-crx3 lỗi: "Could not load key from ''" — file extension.pem rỗng hoặc không đọc được path.
+crx3 vẫn lỗi "Could not load key from ''" dù đã dùng printf ghi PEM.
 
 ## Nguyên nhân gốc
 
-`echo "${{ secrets.CRX_PRIVATE_KEY }}" > extension.pem` — GitHub Actions inject secret thành multiline string, `echo` trên bash có thể bị shell escape hoặc không giữ đúng newline của PEM block, khiến `crx3` nhận path rỗng `""` khi parse key.
+Lệnh `crx3 pack extension --private-key=... --output=...` sai hoàn toàn:
+- `crx3` không có subcommand `pack`
+- Option đúng là `--keyPath` (không phải `--private-key`)
+- Option đúng là `--crxPath` (không phải `--output`)
+→ crx3 bỏ qua options sai, dùng keyPath rỗng "" → ENOENT
 
 ## Cách đã chỉnh để khắc phục
 
-Đổi sang `printf '%s' "..."` — format `%s` không thêm newline thừa, giữ nguyên nội dung PEM.
+Đổi sang syntax đúng:
+`crx3 extension --keyPath=extension.pem --crxPath=extension.crx`
 
 ## File đã áp fix bug
 
 - .github/workflows/release.yml
 
-## Trả lời câu hỏi "lỗi crx3 không đọc được PEM key"
+## Trả lời câu hỏi "vẫn lỗi crx3 load key"
 
-Đã fix. Dùng `printf '%s'` thay `echo` để ghi PEM đúng format, crx3 sẽ đọc được key.
+Đã fix. Nguyên nhân là sai tên option, không phải vấn đề PEM content.
