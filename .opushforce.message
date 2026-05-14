@@ -1,22 +1,30 @@
-fix: cập nhật cách lấy email Gmail từ trang SignOutOptions
-Input của user:
-Tiếp tục xử lý task detect Gmail đã triển khai nhưng chưa lấy được email, dù page vẫn hiển thị email trong DOM.
-Nguyên nhân gốc:
-Logic cũ chỉ đọc selector `[data-email]`.
-Trang `https://accounts.google.com/SignOutOptions` ở bản DOM hiện tại không đảm bảo còn `data-email`; email nằm trong text của nút chọn account.
-Cách đã chỉnh để khắc phục:
-1. Cập nhật `extension/src/content.js` để lấy account từ 3 nguồn.
-2. Ưu tiên đọc `[data-email]` nếu có.
-3. Fallback parse text từ `button[id^="choose-account-"]` để tách email bằng regex.
-4. Fallback cuối cùng quét email từ toàn bộ `document.body.innerText` rồi loại trùng.
-5. Giữ cơ chế gửi `ACCOUNTS_RESULT` về background như cũ.
-6. Cập nhật task note với file liên quan, kết quả kiểm tra và ghi chú selector không ổn định.
-File đã áp fix bug:
-- extension/src/content.js
-- tasks/04-task-template copy.md
+fix:Giữ cố định extension ID để bản mobile ghi đè đúng bản đang cài
+
+Input của user
+- Task @tasks/05-task-template.md
+- Fix lỗi: trên mobile không đè chồng được phiên bản đang cài, mà phát sinh phiên bản mới
+
+Nguyên nhân gốc
+- `extension/manifest.json` chưa khai báo `key`.
+- Khi cài `.crx` thủ công trên mobile/Kiwi, nếu ID extension thay đổi thì trình duyệt coi là extension khác và tạo bản mới.
+- `update-server/updates.xml` đang dùng appid `fpbkecaphicbpfefggeeecdlajmmbpog`, nên manifest cần ghim key sinh ra đúng ID này.
+
+Cách đã chỉnh để khắc phục
+- Lấy public key từ `extension.pem` bằng Node crypto.
+- Xác minh key sinh ra extension ID `fpbkecaphicbpfefggeeecdlajmmbpog`, khớp `updates.xml`.
+- Thêm trường `key` vào `extension/manifest.json` để Chrome/Kiwi giữ nguyên ID khi đóng gói/cài lại.
+- Cập nhật task note trong `tasks/05-task-template.md`.
+
+File đã áp fix bug
+- extension/manifest.json
+- tasks/05-task-template.md
 - .opushforce.message
-Trả lời câu hỏi "Hãy xử lý tiếp tục @tasks/04-task-template copy.md đã triển khai, nhưng chưa lấy được thông tin email":
-Đã sửa parser để không phụ thuộc riêng vào `[data-email]` nữa; giờ có thể lấy email từ text của nút account trên trang SignOutOptions.
-Cần reload extension rồi bấm lại `Kiểm tra Gmail` để kiểm tra runtime thực tế.
+
+Trả lời câu hỏi "Task @tasks/05-task-template.md"
+- Đã fix lỗi mobile phát sinh phiên bản mới bằng cách ghim public key cố định trong manifest.
+- Sau khi build lại `.crx` bằng đúng `extension.pem`, cài trên mobile/Kiwi sẽ nhận cùng extension ID và ghi đè/cập nhật bản cũ.
+
 Lệnh đã chạy:
-node --check "h:\nodejs-tester\o-chrome-extension\extension\src\content.js"
+node -e "const fs=require('fs');const crypto=require('crypto');const key=crypto.createPublicKey(fs.readFileSync('extension.pem'));process.stdout.write(key.export({type:'spki',format:'der'}).toString('base64'))"
+node -e "const fs=require('fs');const crypto=require('crypto');const key=crypto.createPublicKey(fs.readFileSync('extension.pem')).export({type:'spki',format:'der'});const h=crypto.createHash('sha256').update(key).digest();const id=[...h.subarray(0,16)].map(b=>String.fromCharCode(97+(b>>4))+String.fromCharCode(97+(b&15))).join('');console.log(id)"
+node -e "JSON.parse(require('fs').readFileSync('extension/manifest.json','utf8')); console.log('manifest ok')"

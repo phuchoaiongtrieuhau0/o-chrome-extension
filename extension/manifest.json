@@ -4,6 +4,7 @@
   "short_name": "MyExt",
   "description": "Personal automation extension",
   "version": "1.0.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArYMOaT8SelvwtCOrur5rlzj1qJkhUrOhUYV9Q0rMGbVgCYAEbzSdjEdStB0os0NTMv6d2UiQl+tErYLvQCjP9P45p8VVbooMnjjTHaXiFCVpuGQ/iql1e/pQnikPVeM/p4h0AIr6E7qINJgXW3FkxHlEJd4JtCWOBymYlOr9oSgHD6Bx9q4XTwE3kdKn7cjfGBbfgGgNkifvp60Rq/W84ptwQfVVLuMEKgdlUnIuge3uYe8sD4qxWcEslxWqNfIpkrmXP6GhgU42awwmai9XyywDRTzCpXg3KToD3M9sFTLUtWUfK1sDAeeMFEzowFfEQFqLBYOHPWlBMsBsT9YIXwIDAQAB",
   "update_url": "https://phuchoaiongtrieuhau0.github.io/o-chrome-extension/updates.xml",
 
   "action": {
