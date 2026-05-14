@@ -1,27 +1,26 @@
-feat: thêm chức năng tải ZIP/CRX và hỗ trợ quy trình cập nhật thủ công trong popup
+feat: thêm link quản lý extension và tối ưu quy trình cập nhật nhanh
 
 ## Input của user
 
-1. Bổ sung chức năng tải file zip và crx trong phần kiểm tra cập nhật.
-2. Bổ sung chức năng chọn file cập nhật từ zip, tự động cập nhật và reload.
+1. Bổ sung link mở trực tiếp trang quản trị: chrome://extensions/, kiwi://extensions.
+2. Tự động mở hộp thoại chọn file zip để cập nhật nhanh.
 
 ## Nguyên nhân gốc
 
-Người dùng cần các phương thức cập nhật linh hoạt khi cơ chế auto-update của trình duyệt không hoạt động (nhất là khi dùng bản Unpacked).
+Người dùng muốn giảm bớt các thao tác thủ công khi phải tìm trang quản lý extension hoặc tìm nút chọn file.
 
 ## Cách đã chỉnh để khắc phục
 
-- **Popup UI**: Khi có bản mới, hiển thị thêm mục "Tải bản mới" với 2 nút tải trực tiếp file `.zip` và `.crx` từ GitHub Releases.
-- **Quy trình cập nhật thủ công**:
-    - Thêm nút "Chọn file ZIP để cập nhật" giúp người dùng xác định file đã tải.
-    - Do hạn chế bảo mật (Extension không thể tự ghi đè file của chính nó trên ổ đĩa), hệ thống sẽ hiển thị hướng dẫn người dùng giải nén đè vào folder hiện tại.
-    - Thêm nút **Reload Extension** (màu xanh) để khởi động lại extension ngay lập tức sau khi người dùng đã giải nén xong.
+- **Link quản lý**: Thêm link "Quản lý Extension" vào popup. Code tự động nhận diện trình duyệt (Chrome, Kiwi, hoặc Edge) để mở đúng URL tương ứng.
+- **Cập nhật nhanh**: Tối ưu nút "Chọn file ZIP". Khi nhấn vào, hộp thoại chọn file sẽ hiện lên ngay lập tức. Sau khi chọn file, hệ thống sẽ nhắc người dùng giải nén và nhấn "Reload" để hoàn tất.
 
 ## File đã áp fix bug
 
 - extension/src/popup/popup.html
 - extension/src/popup/popup.js
 
-## Trả lời câu hỏi "Thêm chức năng tải và chọn file zip để update"
+## Trả lời câu hỏi "Link quản lý và tự động mở chọn file"
 
-Đã thêm xong! Bây giờ khi kiểm tra thấy có bản mới, popup sẽ hiện ra các nút tải ZIP/CRX. Sau khi tải về, bạn chọn file zip đó để nhận hướng dẫn, sau đó chỉ cần bấm "Reload Extension" là bản mới sẽ được áp dụng ngay lập tức.
+Đã xong!
+1. Bạn có thể nhấn vào link **Quản lý Extension** ở góc trên bên phải popup để mở nhanh trang cài đặt (tự nhận diện Kiwi/Chrome).
+2. Nút **Chọn file ZIP** bây giờ sẽ mở ngay hộp thoại chọn file. Sau khi chọn xong, bạn chỉ cần giải nén rồi bấm **Reload Extension** là xong.

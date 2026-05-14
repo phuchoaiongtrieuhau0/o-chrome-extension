@@ -53,6 +53,16 @@ document.getElementById('btn-download-crx').addEventListener('click', () => {
   if (url) window.open(url, '_blank');
 });
 
+document.getElementById('link-manage-ext').addEventListener('click', (e) => {
+  e.preventDefault();
+  const ua = navigator.userAgent.toLowerCase();
+  let url = 'chrome://extensions';
+  if (ua.includes('kiwi')) url = 'kiwi://extensions';
+  else if (ua.includes('edg/')) url = 'edge://extensions';
+  
+  chrome.tabs.create({ url });
+});
+
 document.getElementById('btn-reload').addEventListener('click', () => {
   chrome.runtime.reload();
 });
