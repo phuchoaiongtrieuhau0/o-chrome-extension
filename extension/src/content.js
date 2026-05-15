@@ -15,6 +15,7 @@
   let isInspectorActive = false;
   let inspectorOverlay = null;
   let lastHoveredEl = null;
+  let hasAutoRunPageRules = false;
 
   function sendToBackground(action, payload = {}) {
     return chrome.runtime.sendMessage({ action, payload });
@@ -252,6 +253,8 @@
       showFloatingButton: config.showFloatingButton ?? true,
       selectors: Array.isArray(config.selectors) ? config.selectors : [],
       guideRules: Array.isArray(config.guideRules) ? config.guideRules : [],
+      pageRules: Array.isArray(config.pageRules) ? config.pageRules : [],
+      ruleData: config.ruleData || {},
       traceLog: Array.isArray(config.traceLog) ? config.traceLog : [],
       dockPos: config.dockPos || 'bottom',
       isOpen: config.isOpen ?? true,
@@ -326,6 +329,102 @@
     
     window.addEventListener('resize', update, { passive: true });
     setTimeout(update, 100);
+  }
+
+  function normalizeMatchValue(value, caseInsensitive = true) {
+    const text = String(value || '').trim();
+    return caseInsensitive ? text.toLowerCase() : text;
+  }
+
+  function pageRuleMatches(rule, url = location.href) {
+    const match = rule?.match || {};
+    const values = Array.isArray(match.values) ? match.values.map((value) => normalizeMatchValue(value, match.caseInsensitive !== false)).filter(Boolean) : [];
+    const target = normalizeMatchValue(url, match.caseInsensitive !== false);
+    if (!rule?.enabled || values.length === 0) return false;
+    if (match.type === 'startsWith') return target.startsWith(values[0]);
+    if (match.type === 'contains') return target.includes(values[0]);
+    if (match.type === 'endsWith') return target.endsWith(values[0]);
+    if (match.type === 'startsAndEndsWith') return values.length >= 2 && target.startsWith(values[0]) && target.endsWith(values[1]);
+    if (match.type === 'containsAll') return values.every((value) => target.includes(value));
+    return false;
+  }
+
+  function getMatchedPageRules(config) {
+    return (config.pageRules || []).filter((rule) => pageRuleMatches(rule));
+  }
+
+  function wait(ms) {
+    return new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(ms) || 0)));
+  }
+
+  async function waitForElement(selector, timeoutMs = 5000) {
+    const endAt = Date.now() + Math.max(0, Number(timeoutMs) || 0);
+    while (Date.now() <= endAt) {
+      const el = document.querySelector(selector);
+      if (el) return el;
+      await wait(100);
+    }
+    return document.querySelector(selector);
+  }
+
+  function readStepValue(el, step) {
+    if (step.attr === 'value') return 'value' in el ? el.value : el.getAttribute('value');
+    if (step.attr === 'href') return el.href || el.getAttribute('href') || '';
+    if (step.attr === 'html') return el.innerHTML || '';
+    if (step.attr === 'attr') return el.getAttribute(step.attrName || '') || '';
+    return (el.textContent || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function setNativeValue(el, value) {
+    const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+    const setter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
+    if (setter) setter.call(el, value);
+    else el.value = value;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  async function resolveFillValue(step, config) {
+    if (step.valueSource === 'envVar') return config.envVars?.[step.key] || '';
+    if (step.valueSource === 'background') {
+      const result = await sendToBackground('GET_RULE_VALUE', { key: step.key });
+      return result?.value || '';
+    }
+    return step.value || '';
+  }
+
+  async function runPageRule(rule, config) {
+    const vars = {};
+    const steps = Array.isArray(rule.steps) ? rule.steps : [];
+    for (const step of steps) {
+      if (step.type === 'wait') {
+        await wait(step.ms || 500);
+        continue;
+      }
+
+      if (step.type === 'backgroundSave') {
+        await sendToBackground('SAVE_RULE_DATA', { key: step.key, value: vars[step.from] ?? '' });
+        continue;
+      }
+
+      const el = step.selector ? await waitForElement(step.selector, step.timeoutMs || 5000) : null;
+      if (!el && step.type !== 'script') throw new Error(`Không tìm thấy selector: ${step.selector}`);
+
+      if (step.type === 'click') {
+        el.scrollIntoView({ block: 'center', inline: 'center' });
+        el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+        if (typeof el.click === 'function') el.click();
+      } else if (step.type === 'fill') {
+        setNativeValue(el, await resolveFillValue(step, config));
+      } else if (step.type === 'extract') {
+        vars[step.saveAs || step.key || 'value'] = readStepValue(el, step);
+      } else if (step.type === 'script') {
+        const fn = new Function('el', 'vars', 'envVars', step.code || 'return null;');
+        const value = await fn(el, vars, config.envVars || {});
+        if (step.saveAs) vars[step.saveAs] = value;
+      }
+    }
+    return vars;
   }
 
   function injectRulePanel(initialConfig) {
@@ -471,20 +570,28 @@
           </div>
           <div class="tab" data-panel="builder">
             <div data-role="env-vars" style="font-size: 11px; color: #10b981; padding: 4px 8px; border: 1px dashed rgba(16,185,129,0.3); border-radius: 4px; margin-bottom: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Loading variables...</div>
+            <label>Rule name <input data-role="builder-rule-name" placeholder="Rule cho page hiện tại"></label>
             <div class="row">
-              <label>Label/key <input data-role="builder-label" placeholder="emailInput"></label>
-              <label>Mode <select data-role="builder-mode"><option value="text">text</option><option value="attr">attr</option></select></label>
+              <label>Match type <select data-role="builder-match-type"><option value="startsWith">startsWith</option><option value="contains">contains</option><option value="endsWith">endsWith</option><option value="startsAndEndsWith">startsAndEndsWith</option><option value="containsAll">containsAll</option></select></label>
+              <label>Match values <input data-role="builder-match-values" placeholder="value1 | value2"></label>
             </div>
             <label>CSS selector <input data-role="builder-selector" placeholder="#email"></label>
+            <label>XPath <input data-role="builder-xpath" placeholder="//*[@id=&quot;email&quot;]"></label>
             <div class="row">
-              <label>Attr <select data-role="builder-attr"><option value="">-</option><option value="value">value</option><option value="href">href</option><option value="src">src</option><option value="alt">alt</option><option value="title">title</option><option value="aria-label">aria-label</option></select></label>
-              <label>Multiple <select data-role="builder-multiple"><option value="false">false</option><option value="true">true</option></select></label>
+              <label>Label/key <input data-role="builder-label" placeholder="emailInput"></label>
+              <label>Step type <select data-role="builder-step-type"><option value="click">click</option><option value="fill">fill</option><option value="extract">extract</option><option value="wait">wait</option><option value="script">script</option><option value="backgroundSave">backgroundSave</option></select></label>
             </div>
+            <div class="row">
+              <label>Value/key/saveAs <input data-role="builder-step-value" placeholder="fixed text / VAR_KEY / saveAs"></label>
+              <label>Source/attr/ms <input data-role="builder-step-extra" placeholder="fixed | envVar | background | text | 500"></label>
+            </div>
+            <textarea spellcheck="false" data-role="builder-steps" style="min-height:120px;">[]</textarea>
             <div class="builder-actions">
-              <button type="button" class="primary" data-action="add-rule-row">Add to JSON</button>
-              <button type="button" data-action="inspect">Pick from page</button>
-              <button type="button" data-action="save">Save JSON</button>
-              <button type="button" data-action="dry-run">Dry-run</button>
+              <button type="button" data-action="inspect">Pick selector/xpath</button>
+              <button type="button" data-action="test-match">Test URL</button>
+              <button type="button" data-action="add-sequence-step">Add step</button>
+              <button type="button" class="primary" data-action="save-page-rule">Save rule</button>
+              <button type="button" data-action="run-page-rule">Run rule</button>
             </div>
           </div>
         </div>
@@ -498,9 +605,14 @@
     const finderResults = panel.querySelector('[data-role="finder-results"]');
     const builderLabel = panel.querySelector('[data-role="builder-label"]');
     const builderSelector = panel.querySelector('[data-role="builder-selector"]');
-    const builderMode = panel.querySelector('[data-role="builder-mode"]');
-    const builderAttr = panel.querySelector('[data-role="builder-attr"]');
-    const builderMultiple = panel.querySelector('[data-role="builder-multiple"]');
+    const builderXpath = panel.querySelector('[data-role="builder-xpath"]');
+    const builderRuleName = panel.querySelector('[data-role="builder-rule-name"]');
+    const builderMatchType = panel.querySelector('[data-role="builder-match-type"]');
+    const builderMatchValues = panel.querySelector('[data-role="builder-match-values"]');
+    const builderStepType = panel.querySelector('[data-role="builder-step-type"]');
+    const builderStepValue = panel.querySelector('[data-role="builder-step-value"]');
+    const builderStepExtra = panel.querySelector('[data-role="builder-step-extra"]');
+    const builderSteps = panel.querySelector('[data-role="builder-steps"]');
     const dockButton = panel.querySelector('[data-action="cycle-dock"]');
     const envVarsDisplay = panel.querySelector('[data-role="env-vars"]');
 
@@ -538,6 +650,57 @@
       envVarsDisplay.title = text;
     }
 
+    function readStepList() {
+      try {
+        const steps = JSON.parse(builderSteps.value || '[]');
+        return Array.isArray(steps) ? steps : [];
+      } catch {
+        throw new Error('Steps JSON không hợp lệ.');
+      }
+    }
+
+    function getBuilderRule() {
+      const values = builderMatchValues.value.split('|').map((value) => value.trim()).filter(Boolean);
+      return {
+        id: crypto.randomUUID(),
+        name: builderRuleName.value.trim() || `Rule ${getCurrentDomain()}`,
+        enabled: true,
+        match: { type: builderMatchType.value, values, caseInsensitive: true },
+        selectedElement: {
+          selector: builderSelector.value.trim(),
+          xpath: builderXpath.value.trim(),
+          label: builderLabel.value.trim()
+        },
+        steps: readStepList(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastRun: null
+      };
+    }
+
+    function renderMatchedRules() {
+      const matched = getMatchedPageRules(currentConfig);
+      setStatus(matched.length ? `Đã lưu: ${matched.map((rule) => rule.name).join(', ')}` : 'Chưa có rule URL cho page này');
+      return matched;
+    }
+
+    async function runMatchedPageRules() {
+      if (hasAutoRunPageRules) return;
+      hasAutoRunPageRules = true;
+      const matched = renderMatchedRules();
+      for (const rule of matched) {
+        try {
+          const vars = await runPageRule(rule, currentConfig);
+          rule.lastRun = { at: new Date().toISOString(), ok: true, error: null };
+          output.textContent = JSON.stringify({ matched: rule.name, vars }, null, 2);
+        } catch (error) {
+          rule.lastRun = { at: new Date().toISOString(), ok: false, error: error.message || String(error) };
+          output.textContent = JSON.stringify({ matched: rule.name, ok: false, error: rule.lastRun.error }, null, 2);
+        }
+      }
+      if (matched.length) renderConfig();
+    }
+
     function readConfigFromTextarea() {
       const parsed = JSON.parse(textarea.value || '{}');
       currentConfig = defaultConfig({ ...parsed, domain: getCurrentDomain() });
@@ -568,9 +731,9 @@
       }
       renderConfig();
       renderEnvVars();
-      output.textContent = JSON.stringify(currentConfig, null, 2);
-      setStatus('Loaded rule');
-      await appendTrace('load', true, `${currentConfig.selectors.length} selectors`);
+      output.textContent = JSON.stringify({ config: currentConfig, matchedRules: getMatchedPageRules(currentConfig) }, null, 2);
+      renderMatchedRules();
+      await appendTrace('load', true, `${currentConfig.selectors.length} selectors · ${currentConfig.pageRules.length} page rules`);
     }
 
     async function saveRule() {
@@ -612,15 +775,10 @@
     function useElementInBuilder(item) {
       builderLabel.value = item.label || item.name || item.id || `${item.kind}_${Math.floor(Math.random()*1000)}`;
       builderSelector.value = item.selector;
-      builderMode.value = item.value || item.kind === 'input' ? 'attr' : 'text';
-      builderAttr.value = item.value || item.kind === 'input' ? 'value' : '';
-      builderMultiple.value = 'false';
-      
-      // Chuyển sang tab Builder
+      builderXpath.value = item.xpath || '';
       panel.querySelectorAll('[data-tab]').forEach((btn) => btn.classList.toggle('active-tab-btn', btn.dataset.tab === 'builder'));
       panel.querySelectorAll('[data-panel]').forEach((section) => section.classList.toggle('active', section.dataset.panel === 'builder'));
-      
-      setStatus('Element loaded into builder');
+      setStatus('Đã pick selector/xpath vào builder');
     }
 
     function renderFinderResults(results) {
@@ -703,23 +861,65 @@
     }
 
     function addRuleRowFromBuilder() {
-      readConfigFromTextarea();
       const selector = builderSelector.value.trim();
       const label = builderLabel.value.trim() || selector;
       if (!selector) throw new Error('Builder cần CSS selector.');
-
       currentConfig.selectors = [...(currentConfig.selectors || []), {
         id: crypto.randomUUID(),
         label,
         selector,
-        mode: builderMode.value,
-        attr: builderAttr.value || null,
-        multiple: builderMultiple.value === 'true',
+        xpath: builderXpath.value.trim(),
+        mode: 'text',
+        attr: null,
+        multiple: false,
         trim: true
       }];
       renderConfig();
       output.textContent = JSON.stringify({ ok: true, added: currentConfig.selectors.at(-1), selectors: currentConfig.selectors }, null, 2);
-      setStatus('Added selector to rule JSON');
+      setStatus('Added selector/xpath to JSON');
+    }
+
+    function addSequenceStepFromBuilder() {
+      const steps = readStepList();
+      const selector = builderSelector.value.trim();
+      const type = builderStepType.value;
+      const value = builderStepValue.value.trim();
+      const extra = builderStepExtra.value.trim();
+      let step = { type, selector };
+      if (type === 'wait') step = { type, ms: Number(extra || value || 500) };
+      if (type === 'fill') step = { type, selector, valueSource: extra || 'fixed', value, key: value };
+      if (type === 'extract') step = { type, selector, attr: extra || 'text', saveAs: value || builderLabel.value.trim() || 'value' };
+      if (type === 'script') step = { type, selector, code: value || 'return el?.textContent || null;', saveAs: extra || '' };
+      if (type === 'backgroundSave') step = { type, key: extra || value, from: value };
+      steps.push(step);
+      builderSteps.value = JSON.stringify(steps, null, 2);
+      output.textContent = JSON.stringify({ added: step, steps }, null, 2);
+      setStatus(`Added step ${type}`);
+    }
+
+    async function savePageRuleFromBuilder() {
+      const rule = getBuilderRule();
+      if (!rule.match.values.length) throw new Error('Cần nhập match values.');
+      if (!pageRuleMatches({ ...rule, enabled: true })) throw new Error('Match URL hiện tại chưa đúng.');
+      const existingIndex = currentConfig.pageRules.findIndex((item) => item.name === rule.name);
+      if (existingIndex >= 0) {
+        rule.id = currentConfig.pageRules[existingIndex].id;
+        rule.createdAt = currentConfig.pageRules[existingIndex].createdAt;
+        currentConfig.pageRules[existingIndex] = rule;
+      } else {
+        currentConfig.pageRules.push(rule);
+      }
+      await saveConfig(currentConfig);
+      output.textContent = JSON.stringify({ ok: true, savedRule: rule, matchedRules: getMatchedPageRules(currentConfig) }, null, 2);
+      renderMatchedRules();
+      await appendTrace('save-page-rule', true, rule.name);
+    }
+
+    async function runBuilderPageRule() {
+      const rule = getBuilderRule();
+      const vars = await runPageRule(rule, currentConfig);
+      output.textContent = JSON.stringify({ ok: true, rule: rule.name, vars }, null, 2);
+      setStatus(`Ran ${rule.name}`);
     }
 
     function openGuide() {
@@ -825,6 +1025,14 @@
         if (action === 'inspect') toggleInspector();
         if (action === 'cycle-dock') cycleDockPos();
         if (action === 'add-rule-row') addRuleRowFromBuilder();
+        if (action === 'test-match') {
+          const rule = getBuilderRule();
+          output.textContent = JSON.stringify({ url: location.href, match: rule.match, matched: pageRuleMatches({ ...rule, enabled: true }) }, null, 2);
+          setStatus(pageRuleMatches({ ...rule, enabled: true }) ? 'URL matched' : 'URL not matched');
+        }
+        if (action === 'add-sequence-step') addSequenceStepFromBuilder();
+        if (action === 'save-page-rule') await savePageRuleFromBuilder();
+        if (action === 'run-page-rule') await runBuilderPageRule();
         if (action === 'guide') openGuide();
       } catch (error) {
         const message = error?.message || String(error);
@@ -901,9 +1109,11 @@
     }, true);
 
     renderConfig();
+    renderEnvVars();
     shadow.append(style, panel);
     document.documentElement.appendChild(host);
     reservePageSpace(host);
+    setTimeout(runMatchedPageRules, 300);
   }
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -916,6 +1126,7 @@
   loadCollectorConfig().then(injectRulePanel);
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName !== 'local' || !changes['selectorCollector:configs:v1']) return;
+    if (document.activeElement?.closest?.(`#${PANEL_ID}`)) return;
     const config = changes['selectorCollector:configs:v1'].newValue?.[getCurrentDomain()];
     injectRulePanel(config);
   });

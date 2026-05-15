@@ -22,6 +22,7 @@ import { register as registerHelloWorld } from './features/hello-world/index.js'
 // ─────────────────────────────────────────────────────
 
 const TAG = 'background';
+const RULE_DATA_KEY = 'pageRule:data:v1';
 
 async function initFeatures() {
   // Clear cũ để tránh lỗi "Duplicate ID" khi Service Worker khởi động lại
@@ -114,6 +115,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   } else if (message.action === 'SYNC_SELECTOR_COLLECTION') {
     appendSelectorCollection(message.payload).then(sendResponse);
     return true;
+  } else if (message.action === 'GET_RULE_VALUE') {
+    getRuleValue(message.payload?.key).then(sendResponse);
+    return true;
+  } else if (message.action === 'SAVE_RULE_DATA') {
+    saveRuleData(message.payload || {}).then(sendResponse);
+    return true;
   }
   return true;
 });
@@ -124,6 +131,27 @@ function getDomainFromUrl(url) {
   } catch {
     return '';
   }
+}
+
+async function getRuleValue(key) {
+  if (!key) return { ok: false, value: '', error: 'Thiếu key.' };
+  const [ruleData, fixedVars] = await Promise.all([
+    chrome.storage.local.get([RULE_DATA_KEY]),
+    chrome.storage.local.get(['fixed_variables'])
+  ]);
+  const data = ruleData[RULE_DATA_KEY] || {};
+  const vars = fixedVars.fixed_variables || {};
+  return { ok: true, value: data[key] ?? vars[key] ?? '' };
+}
+
+async function saveRuleData(payload = {}) {
+  const key = payload.key;
+  if (!key) return { ok: false, error: 'Thiếu key.' };
+  const result = await chrome.storage.local.get([RULE_DATA_KEY]);
+  const data = result[RULE_DATA_KEY] || {};
+  data[key] = payload.value;
+  await chrome.storage.local.set({ [RULE_DATA_KEY]: data });
+  return { ok: true, key, value: payload.value };
 }
 
 async function collectSelectorsFromActiveTab(payload = {}) {

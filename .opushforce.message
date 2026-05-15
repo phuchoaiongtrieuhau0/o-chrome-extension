@@ -1,18 +1,21 @@
-fix: Sửa lỗi cú pháp do backtick bị escape sai trong content.js
+fix:Chặn builder rule auto-run bị lặp vô hạn sau khi reload page
 
-Input của user:
-kiểm tra lỗi cú pháp file : extension\src\content.js
+Input của user
+Khi lưu một rule, reload page lại là nó load hoài, không điều khiển được.
 
-Nguyên nhân gốc:
-- File `extension/src/content.js` chứa các đoạn code HTML template dùng backtick (`` ` ``) và template literals (`${}`) nhưng bị chèn thêm ký tự gạch chéo ngược (`\`) ở phía trước (ví dụ: `\`` và `\${`). Điều này khiến JavaScript không hiểu đó là template string mà coi là các ký tự bình thường, dẫn tới lỗi cú pháp (`SyntaxError: Unexpected identifier`). 
+Nguyên nhân gốc
+Sau khi page load, matched rule tự chạy rồi cập nhật `lastRun`/trace bằng cách save config.
+Việc save config kích hoạt `chrome.storage.onChanged`, panel bị inject lại, rồi auto-run tiếp tục chạy lại thành vòng lặp.
 
-Cách đã chỉnh để khắc phục:
-- Viết script quyét toàn bộ file `content.js` để tìm và thay thế tất cả các chuỗi `\`` thành `` ` ``.
-- Thay thế các chuỗi `\${` thành `${` để các biến trong template literals hoạt động bình thường.
-- Chạy `node -c` để xác nhận file không còn lỗi cú pháp nào.
+Cách đã chỉnh để khắc phục
+Thêm guard `hasAutoRunPageRules` để auto-run rule chỉ chạy một lần trong vòng đời page.
+Không gọi `saveConfig`/`appendTrace` trong auto-run sau khi reload page, tránh kích hoạt storage change lặp.
+Storage change không reinject panel khi user đang thao tác trong panel.
+Vẫn giữ trạng thái matched rule hiển thị trên UI.
 
-File đã áp fix bug:
-- `extension/src/content.js`
+File đã áp fix bug
+extension/src/content.js
+.opushforce.message
 
-Trả lời câu hỏi "kiểm tra lỗi cú pháp file":
-Đã xử lý xong. Lỗi cú pháp phát sinh do một thay đổi trước đó vô tình làm escape (thêm gạch chéo) vào các dấu backtick và dấu đô-la trong code khởi tạo giao diện của `content.js`. File đã được dọn sạch các dấu gạch chéo thừa và parse thành công không còn lỗi syntax nào.
+Trả lời câu hỏi "Khi lưu một rule, reload page lại là nó load hoài"
+Đã fix vòng lặp reload/load hoài. Bây giờ rule matched chỉ auto-run một lần sau khi page load, không tự save gây reinject liên tục nữa.

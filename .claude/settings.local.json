@@ -1,12 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(node --check \"h:\\\\nodejs-tester\\\\o-chrome-extension\\\\extension\\\\src\\\\content.js\")",
-      "PowerShell(node --check \"h:\\\\nodejs-tester\\\\o-chrome-extension\\\\extension\\\\src\\\\background.js\")",
-      "PowerShell(node --check \"h:\\\\nodejs-tester\\\\o-chrome-extension\\\\extension\\\\src\\\\core\\\\storage.js\")",
-      "PowerShell(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('h:/nodejs-tester/o-chrome-extension/extension/manifest.json','utf8'\\)\\); console.log\\('manifest ok'\\)\")",
-      "PowerShell(Move-Item -Path \"h:\\\\nodejs-tester\\\\o-chrome-extension\\\\tasks\\\\task-template.md\" -Destination \"h:\\\\nodejs-tester\\\\o-chrome-extension\\\\tasks\\\\done\\\\rule-panel-collect-web-page.md\")",
-      "PowerShell(node --check \"h:\\\\nodejs-tester\\\\o-chrome-extension\\\\extension\\\\src\\\\rule-guide\\\\rule-guide.js\")"
+      "Bash(*)",
+      "Bash(powershell*)",
+      "Bash(pwsh*)",
+      "PowerShell(if \\(-not \\(Test-Path \"h:\\\\nodejs-tester\\\\o-chrome-extension\\\\tasks\"\\)\\) { throw 'tasks folder missing' } ; if \\(-not \\(Test-Path \"h:\\\\nodejs-tester\\\\o-chrome-extension\\\\tasks\\\\done\"\\)\\) { New-Item -ItemType Directory -Path \"h:\\\\nodejs-tester\\\\o-chrome-extension\\\\tasks\\\\done\" | Out-Null } ; Move-Item -Path \"h:\\\\nodejs-tester\\\\o-chrome-extension\\\\tasks\\\\task-change-builder-rules.md\" -Destination \"h:\\\\nodejs-tester\\\\o-chrome-extension\\\\tasks\\\\done\\\\change-builder-rules.md\" -Force)",
+      "PowerShell(node --check \"h:\\\\nodejs-tester\\\\o-chrome-extension\\\\extension\\\\src\\\\content.js\")"
     ]
   }
 }
