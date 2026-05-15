@@ -1,0 +1,16 @@
+feat:Tổ chức lại panel inject hỗ trợ thay đổi vị trí docking (Top, Bottom, Left, Right)
+Input của user:
+- Tổ chức lại panel inject này: có thể apply vào dạng bottom, right, left hoặc top lúc runtime
+Nguyên nhân gốc:
+- Panel trước đây được fix cứng ở vị trí bottom, gây khó khăn khi thu thập dữ liệu ở các vùng bị che khuất tùy theo layout trang web.
+Cách đã chỉnh để khắc phục:
+- Thêm dropdown chọn vị trí (Bottom, Top, Left, Right) trực tiếp trên thanh công cụ của panel.
+- Cập nhật CSS linh hoạt: 
+  + Top/Bottom: giữ layout 2 cột, chiều cao tối đa 48vh.
+  + Left/Right: chuyển sang layout 1 cột (sidebar), chiều rộng 420px, tối ưu cho màn hình dọc.
+- Cải tiến logic chừa khoảng trống (reserve space): tự động tính toán và áp dụng padding tương ứng (padding-top, padding-bottom, padding-left, padding-right) lên trang web dựa trên vị trí đang chọn.
+- Lưu trạng thái vị trí đã chọn vào config để duy trì khi chuyển trang hoặc reload.
+File đã áp fix bug:
+- extension/src/content.js
+Trả lời câu hỏi "Tổ chức lại panel inject này":
+- Đã tổ chức lại panel thành một UI linh hoạt hơn. Bạn có thể chọn vị trí Dock mong muốn ngay trên thanh Bar. Panel sẽ tự động điều chỉnh layout và khoảng trống trên trang web để không che mất các element quan trọng.

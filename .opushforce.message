@@ -1,38 +1,13 @@
-feat:Bổ sung cấu hình thu thập thông tin web page theo selector
-
-Input của user
-User báo chưa thấy chức năng cấu hình để lấy các thông tin trên web page. User chọn có cả cấu hình trong popup và nút nổi append vào web page, cần lấy được value theo cấu hình.
-
-Nguyên nhân gốc
-Bản trước mới có realtime sync, Gmail current email, JSON view/export và DOM metadata an toàn; chưa có UI cấu hình selector theo domain, chưa có nút nổi trên web page, chưa lưu kết quả collect vào dữ liệu email hiện tại.
-
-Cách đã chỉnh để khắc phục
-Thêm storage config `selectorCollector:configs:v1` theo domain.
-Thêm popup UI cấu hình collector cho domain hiện tại: enabled, show floating button, label, CSS selector, mode text/attribute, attr, multiple.
-Thêm nút `Collect now` trong popup để collect tab hiện tại.
-Thêm content script inject nút nổi `Collect fields` trên web page nếu domain được bật.
-Collector chỉ chạy khi user bấm thủ công, không tự quét khi page load.
-Cho lấy `.value` chỉ khi row cấu hình `mode=attr` và `attr=value`.
-Lưu kết quả collect vào `data.selectorCollections[domain]` của current email rồi sync realtime local-first.
-Cập nhật task note trong `tasks/done/realtime-database-safe-sync.md`.
-
-File đã áp fix bug
-extension/src/core/storage.js
-extension/src/core/realtime-db.js
-extension/src/background.js
-extension/src/content.js
-extension/src/popup/popup.html
-extension/src/popup/popup.js
-extension/src/popup/popup.css
-tasks/done/realtime-database-safe-sync.md
-.opushforce.message
-
-Trả lời câu hỏi "chưa thấy chức năng cấu hình để lấy các thông tin trên web page"
-Đã bổ sung chức năng cấu hình selector theo domain trong popup và nút nổi trên web page. Vào popup tab Cài đặt, mục Thu thập web page, thêm selector rồi lưu; reload web page để thấy nút nổi hoặc bấm `Collect now` ngay trong popup.
-
-Lệnh đã chạy:
-node --check "h:\nodejs-tester\o-chrome-extension\extension\src\core\storage.js"
-node --check "h:\nodejs-tester\o-chrome-extension\extension\src\core\realtime-db.js"
-node --check "h:\nodejs-tester\o-chrome-extension\extension\src\background.js"
-node --check "h:\nodejs-tester\o-chrome-extension\extension\src\content.js"
-node --check "h:\nodejs-tester\o-chrome-extension\extension\src\popup\popup.js"
+feat:Duy trì trạng thái đóng/mở của panel khi thay đổi vị trí docking
+Input của user:
+- Giữ trạng thái khi thay đổi dock, ví dụ, nếu đang ở expanded thì vẫn giữ, ngược lại nếu minimize thì vẫn giữ khi change dock
+Nguyên nhân gốc:
+- Logic trước đây mặc định mở panel (`panel open`) mỗi khi khởi tạo lại UI (khi save config vị trí dock).
+Cách đã chỉnh để khắc phục:
+- Bổ sung trường `isOpen` vào cấu hình mặc định của panel.
+- Cập nhật hàm `view` (nút View): khi người dùng nhấn ẩn/hiện, trạng thái này sẽ được lưu vào config và đồng bộ xuống storage.
+- Khi render panel mới (sau khi đổi dock), class `open` sẽ được thêm vào dựa trên giá trị `isOpen` đã lưu, thay vì luôn luôn có class `open`.
+File đã áp fix bug:
+- extension/src/content.js
+Trả lời câu hỏi "Giữ trạng thái khi thay đổi dock":
+- Đã khắc phục xong. Bây giờ nếu bạn đang thu nhỏ panel và đổi vị trí dock, panel sẽ vẫn ở trạng thái thu nhỏ tại vị trí mới, tương tự với khi đang mở rộng.

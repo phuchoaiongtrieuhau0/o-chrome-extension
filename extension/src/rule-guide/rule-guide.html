@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rule Collector Guide</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, -apple-system, Segoe UI, sans-serif; background: #0f172a; color: #e5e7eb; }
+    body { margin: 0; padding: 24px; }
+    main { max-width: 1100px; margin: 0 auto; display: grid; gap: 16px; }
+    section { border: 1px solid rgba(148,163,184,.25); border-radius: 14px; background: #111827; padding: 16px; }
+    h1, h2 { margin: 0 0 10px; }
+    p, li { color: #cbd5e1; line-height: 1.6; }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+    pre { white-space: pre-wrap; overflow: auto; background: #020617; border: 1px solid rgba(148,163,184,.25); border-radius: 10px; padding: 12px; color: #d1d5db; }
+    button { border: 1px solid rgba(99,102,241,.55); border-radius: 8px; background: #4f46e5; color: white; padding: 8px 10px; cursor: pointer; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 800px) { body { padding: 12px; } .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main>
+    <section>
+      <h1>Rule Collector Guide</h1>
+      <p>Trang này hướng dẫn cấu hình rule collect dữ liệu trên web page. Rule được lưu theo domain trong <code>selectorCollector:configs:v1</code>.</p>
+      <button id="btn-copy-sample">Copy sample rule</button>
+      <button id="btn-copy-current">Copy current config</button>
+    </section>
+
+    <section>
+      <h2>Cách dùng nhanh</h2>
+      <ol>
+        <li>Mở web page cần collect.</li>
+        <li>Trong panel, vào tab <b>Finder</b>, chọn loại element như input/button/link rồi tìm theo text/value/placeholder.</li>
+        <li>Bấm <b>Use in builder</b> để đưa selector vào form.</li>
+        <li>Trong tab <b>Builder</b>, chỉnh label, mode, attr, multiple rồi bấm <b>Add selector</b>.</li>
+        <li>Bấm <b>Save rule</b>, sau đó <b>Dry-run rule</b> để kiểm tra kết quả.</li>
+      </ol>
+    </section>
+
+    <div class="grid">
+      <section>
+        <h2>Sample config</h2>
+        <pre id="sample-json"></pre>
+      </section>
+      <section>
+        <h2>Current saved config</h2>
+        <pre id="current-json">Đang tải...</pre>
+      </section>
+    </div>
+
+    <section>
+      <h2>Schema selector</h2>
+      <ul>
+        <li><code>label</code>: tên field dễ đọc.</li>
+        <li><code>selector</code>: CSS selector dùng <code>document.querySelectorAll</code>.</li>
+        <li><code>mode=text</code>: lấy <code>textContent</code>.</li>
+        <li><code>mode=attr</code>: lấy attribute trong allowlist: value, href, src, alt, title, aria-label, data-*.</li>
+        <li><code>multiple=true</code>: lấy tất cả element match; false chỉ lấy element đầu tiên.</li>
+        <li><code>trim=true</code>: chuẩn hóa khoảng trắng.</li>
+      </ul>
+    </section>
+  </main>
+  <script src="rule-guide.js"></script>
+</body>
+</html>

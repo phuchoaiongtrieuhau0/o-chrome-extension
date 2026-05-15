@@ -75,7 +75,7 @@
 
   "web_accessible_resources": [
     {
-      "resources": ["src/content.js", "icons/*"],
+      "resources": ["src/content.js", "src/rule-guide/*", "icons/*"],
       "matches": ["<all_urls>"]
     }
   ],

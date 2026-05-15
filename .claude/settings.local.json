@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(node --check \"h:\\\\nodejs-tester\\\\o-chrome-extension\\\\extension\\\\src\\\\content.js\")",
+      "PowerShell(node --check \"h:\\\\nodejs-tester\\\\o-chrome-extension\\\\extension\\\\src\\\\background.js\")",
+      "PowerShell(node --check \"h:\\\\nodejs-tester\\\\o-chrome-extension\\\\extension\\\\src\\\\core\\\\storage.js\")",
+      "PowerShell(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('h:/nodejs-tester/o-chrome-extension/extension/manifest.json','utf8'\\)\\); console.log\\('manifest ok'\\)\")",
+      "PowerShell(Move-Item -Path \"h:\\\\nodejs-tester\\\\o-chrome-extension\\\\tasks\\\\task-template.md\" -Destination \"h:\\\\nodejs-tester\\\\o-chrome-extension\\\\tasks\\\\done\\\\rule-panel-collect-web-page.md\")",
+      "PowerShell(node --check \"h:\\\\nodejs-tester\\\\o-chrome-extension\\\\extension\\\\src\\\\rule-guide\\\\rule-guide.js\")"
+    ]
+  }
+}
