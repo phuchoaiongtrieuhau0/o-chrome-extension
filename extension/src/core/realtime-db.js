@@ -193,12 +193,38 @@ export async function syncCurrentEmailData(patch = {}) {
   const next = {
     ...existing,
     ...patch,
+    data: {
+      ...(existing.data || {}),
+      ...(patch.data || {})
+    },
     key: currentEmail.key,
     email: currentEmail.email,
     updatedAt: nowIso()
   };
   await set(emailDataKey(currentEmail.key), next);
   return restoreThenSyncEmail(currentEmail.key, next);
+}
+
+export async function appendSelectorCollection(payload) {
+  const currentEmail = await getCurrentEmail();
+  if (!currentEmail?.key) return { ok: false, error: 'Chưa có email hiện tại. Hãy bấm Kiểm tra Gmail trước.' };
+
+  const existing = await get(emailDataKey(currentEmail.key), {});
+  const data = existing.data || {};
+  const selectorCollections = data.selectorCollections || {};
+  const domain = payload?.domain || 'unknown';
+  const entries = Array.isArray(selectorCollections[domain]) ? selectorCollections[domain] : [];
+  const nextCollections = {
+    ...selectorCollections,
+    [domain]: [...entries.slice(-49), payload]
+  };
+
+  return syncCurrentEmailData({
+    data: {
+      ...data,
+      selectorCollections: nextCollections
+    }
+  });
 }
 
 export async function listRemoteEmails() {

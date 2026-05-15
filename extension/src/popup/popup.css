@@ -379,6 +379,48 @@ header {
   font-size: 11px;
 }
 
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  margin-top: 8px;
+}
+
+.collector-warning {
+  margin: 8px 0;
+  padding: 8px;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 6px;
+  color: var(--warning);
+  font-size: 11px;
+  line-height: 1.4;
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.collector-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.collector-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.collector-row .select-input,
+.collector-row .text-input {
+  min-width: 0;
+}
+
 .remote-list {
   display: flex;
   flex-direction: column;

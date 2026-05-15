@@ -175,6 +175,123 @@ async function exportCurrentEmailData() {
   URL.revokeObjectURL(url);
 }
 
+function domainFromUrl(url) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return '';
+  }
+}
+
+async function getActiveTabDomain() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  return domainFromUrl(tab?.url || '');
+}
+
+function createSelectorRow(row = {}) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'collector-row';
+  wrapper.dataset.id = row.id || crypto.randomUUID();
+
+  const label = document.createElement('input');
+  label.className = 'text-input';
+  label.placeholder = 'Key/label';
+  label.value = row.label || '';
+  label.dataset.field = 'label';
+
+  const selector = document.createElement('input');
+  selector.className = 'text-input';
+  selector.placeholder = 'CSS selector';
+  selector.value = row.selector || '';
+  selector.dataset.field = 'selector';
+
+  const mode = document.createElement('select');
+  mode.className = 'select-input';
+  mode.dataset.field = 'mode';
+  [['text', 'Text'], ['attr', 'Attribute']].forEach(([value, text]) => {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = text;
+    mode.appendChild(option);
+  });
+  mode.value = row.mode || 'text';
+
+  const attr = document.createElement('select');
+  attr.className = 'select-input';
+  attr.dataset.field = 'attr';
+  ['', 'value', 'href', 'src', 'alt', 'title', 'aria-label'].forEach((value) => {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = value || '-';
+    attr.appendChild(option);
+  });
+  attr.value = row.attr || '';
+
+  const multipleLabel = document.createElement('label');
+  multipleLabel.className = 'checkbox-row';
+  const multiple = document.createElement('input');
+  multiple.type = 'checkbox';
+  multiple.dataset.field = 'multiple';
+  multiple.checked = Boolean(row.multiple);
+  multipleLabel.append(multiple, ' Multi');
+
+  const remove = document.createElement('button');
+  remove.type = 'button';
+  remove.className = 'mini-btn';
+  remove.textContent = 'X';
+  remove.addEventListener('click', () => wrapper.remove());
+
+  wrapper.append(label, selector, mode, attr, multipleLabel, remove);
+  return wrapper;
+}
+
+function readSelectorConfigFromUi() {
+  const domain = document.getElementById('collector-domain').textContent;
+  const selectors = [...document.querySelectorAll('.collector-row')].map((row) => ({
+    id: row.dataset.id,
+    label: row.querySelector('[data-field="label"]').value.trim(),
+    selector: row.querySelector('[data-field="selector"]').value.trim(),
+    mode: row.querySelector('[data-field="mode"]').value,
+    attr: row.querySelector('[data-field="attr"]').value || null,
+    multiple: row.querySelector('[data-field="multiple"]').checked,
+    trim: true
+  })).filter((row) => row.label && row.selector);
+
+  return {
+    domain,
+    enabled: document.getElementById('collector-enabled').checked,
+    showFloatingButton: document.getElementById('collector-floating').checked,
+    selectors
+  };
+}
+
+async function loadSelectorConfigUi() {
+  const domain = await getActiveTabDomain();
+  document.getElementById('collector-domain').textContent = domain || 'unknown';
+  const rows = document.getElementById('collector-rows');
+  rows.innerHTML = '';
+
+  const config = domain ? await sendMessage('GET_SELECTOR_CONFIG_FOR_DOMAIN', { domain }) : null;
+  document.getElementById('collector-enabled').checked = Boolean(config?.enabled);
+  document.getElementById('collector-floating').checked = Boolean(config?.showFloatingButton);
+  (config?.selectors || []).forEach((row) => rows.appendChild(createSelectorRow(row)));
+  if (!config?.selectors?.length) rows.appendChild(createSelectorRow());
+}
+
+async function saveSelectorConfigUi() {
+  const config = readSelectorConfigFromUi();
+  await sendMessage('SAVE_SELECTOR_CONFIG', { domain: config.domain, config });
+  showToast('Đã lưu cấu hình collector. Reload web page để hiện nút nổi nếu cần.');
+}
+
+async function collectSelectorsNow() {
+  await saveSelectorConfigUi();
+  const result = await sendMessage('COLLECT_SELECTORS_FROM_ACTIVE_TAB', { source: 'popup' });
+  document.getElementById('collector-result-json').textContent = prettyJson(result);
+  showToast(result?.ok ? 'Đã collect selector.' : (result?.error || 'Collect lỗi.'));
+  if (result?.ok) await refreshCurrentEmailData();
+}
+
 async function loadRemoteEmails() {
   const summary = document.getElementById('remote-emails-summary');
   const list = document.getElementById('remote-emails-list');
@@ -503,6 +620,14 @@ document.getElementById('btn-export-current-data').addEventListener('click', exp
 
 document.getElementById('btn-load-remote-emails').addEventListener('click', loadRemoteEmails);
 
+document.getElementById('btn-add-selector-row').addEventListener('click', () => {
+  document.getElementById('collector-rows').appendChild(createSelectorRow());
+});
+
+document.getElementById('btn-save-selector-config').addEventListener('click', saveSelectorConfigUi);
+
+document.getElementById('btn-collect-selectors').addEventListener('click', collectSelectorsNow);
+
 // Inspect & Logs
 document.getElementById('btn-inspect-popup').addEventListener('click', () => {
   showToast('🔍 Chuột phải vào Popup -> Inspect để xem log.', 4000);
@@ -533,5 +658,6 @@ document.getElementById('btn-inspect-sidepanel').addEventListener('click', () =>
 
 refreshStatus();
 loadRealtimeConfig();
+loadSelectorConfigUi();
 refreshCurrentEmailData();
 setInterval(refreshStatus, 30000);

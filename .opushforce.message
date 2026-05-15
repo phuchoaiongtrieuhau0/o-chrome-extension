@@ -1,37 +1,36 @@
-feat:Bổ sung realtime database local-first an toàn
+feat:Bổ sung cấu hình thu thập thông tin web page theo selector
 
 Input của user
-@tasks/task-template.md triển khai giúp tôi: bổ sung database quản lý dữ liệu bằng Google Realtime Database, dùng secret trong URL, lưu config, sync theo Gmail/email key, popup xem/copy/export JSON, xem dữ liệu realtime.
+User báo chưa thấy chức năng cấu hình để lấy các thông tin trên web page. User chọn có cả cấu hình trong popup và nút nổi append vào web page, cần lấy được value theo cấu hình.
 
 Nguyên nhân gốc
-Extension chưa có lớp lưu dữ liệu theo email hiện tại, chưa có cấu hình Realtime Database, chưa có cơ chế local-first rồi sync remote.
-Yêu cầu ban đầu có phần tự động thu thập token/password/2FA/secret từ website, nên đã xác nhận phạm vi an toàn trước khi làm.
+Bản trước mới có realtime sync, Gmail current email, JSON view/export và DOM metadata an toàn; chưa có UI cấu hình selector theo domain, chưa có nút nổi trên web page, chưa lưu kết quả collect vào dữ liệu email hiện tại.
 
 Cách đã chỉnh để khắc phục
-Thêm module realtime DB dùng `chrome.storage.local` và REST API Firebase.
-Thêm key email đã sanitize để lưu theo Gmail hiện tại.
-Khi bấm kiểm tra Gmail, extension lưu local trước, restore remote lần đầu nếu có, rồi PUT dữ liệu lên realtime.
-Thêm UI cấu hình DB URL/secret trong popup.
-Thêm UI xem JSON email hiện tại, copy, xuất file.
-Thêm UI xem tất cả email trên realtime, đếm tổng số và xem chi tiết.
-Giữ cấu hình realtime khi bấm `btn-clear-data`.
-Bỏ việc copy `value` từ DOM helper và bỏ qua trường nhạy cảm như password/token/secret/2FA/API key.
-Không triển khai auto-scrape token/password/2FA/secret từ website.
+Thêm storage config `selectorCollector:configs:v1` theo domain.
+Thêm popup UI cấu hình collector cho domain hiện tại: enabled, show floating button, label, CSS selector, mode text/attribute, attr, multiple.
+Thêm nút `Collect now` trong popup để collect tab hiện tại.
+Thêm content script inject nút nổi `Collect fields` trên web page nếu domain được bật.
+Collector chỉ chạy khi user bấm thủ công, không tự quét khi page load.
+Cho lấy `.value` chỉ khi row cấu hình `mode=attr` và `attr=value`.
+Lưu kết quả collect vào `data.selectorCollections[domain]` của current email rồi sync realtime local-first.
+Cập nhật task note trong `tasks/done/realtime-database-safe-sync.md`.
 
 File đã áp fix bug
-extension/src/core/realtime-db.js
 extension/src/core/storage.js
+extension/src/core/realtime-db.js
 extension/src/background.js
+extension/src/content.js
 extension/src/popup/popup.html
 extension/src/popup/popup.js
 extension/src/popup/popup.css
 tasks/done/realtime-database-safe-sync.md
 .opushforce.message
 
-Trả lời câu hỏi "@tasks/task-template.md triển khai giúp tôi"
-Đã triển khai realtime database local-first theo Gmail/email key, có cấu hình URL/secret, xem/copy/export JSON, xem danh sách dữ liệu realtime và giữ config khi xóa dữ liệu trình duyệt. Phần thu thập secret/2FA tự động từ website không triển khai để tránh rủi ro; DOM helper chỉ lấy metadata an toàn.
+Trả lời câu hỏi "chưa thấy chức năng cấu hình để lấy các thông tin trên web page"
+Đã bổ sung chức năng cấu hình selector theo domain trong popup và nút nổi trên web page. Vào popup tab Cài đặt, mục Thu thập web page, thêm selector rồi lưu; reload web page để thấy nút nổi hoặc bấm `Collect now` ngay trong popup.
 
-Lệnh kiểm tra cần chạy:
+Lệnh đã chạy:
 node --check "h:\nodejs-tester\o-chrome-extension\extension\src\core\storage.js"
 node --check "h:\nodejs-tester\o-chrome-extension\extension\src\core\realtime-db.js"
 node --check "h:\nodejs-tester\o-chrome-extension\extension\src\background.js"

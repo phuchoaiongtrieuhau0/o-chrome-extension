@@ -89,6 +89,21 @@
         </div>
 
         <div class="card">
+          <h3 class="section-title">Thu thập web page</h3>
+          <div class="small-status">Domain: <span id="collector-domain">...</span></div>
+          <label class="checkbox-row"><input type="checkbox" id="collector-enabled"> Bật cấu hình cho domain này</label>
+          <label class="checkbox-row"><input type="checkbox" id="collector-floating"> Hiện nút nổi trên web page</label>
+          <div class="collector-warning">Chỉ thu thập khi bấm thủ công. `value` có thể chứa dữ liệu nhạy cảm; chỉ dùng cho selector bạn chủ động cấu hình.</div>
+          <div id="collector-rows" class="collector-rows"></div>
+          <div class="action-row">
+            <button class="btn btn--ghost" id="btn-add-selector-row">Thêm dòng</button>
+            <button class="btn btn--secondary" id="btn-save-selector-config">Lưu config</button>
+            <button class="btn btn--primary" id="btn-collect-selectors">Collect now</button>
+          </div>
+          <pre id="collector-result-json" class="json-view">Chưa collect.</pre>
+        </div>
+
+        <div class="card">
           <h3 class="section-title">Thông tin</h3>
           <div class="info-row">
             <span>ID Extension:</span>

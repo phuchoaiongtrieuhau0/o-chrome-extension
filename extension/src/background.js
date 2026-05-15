@@ -5,6 +5,7 @@ import { log, err } from './core/logger.js';
 import { initMessageRouter } from './core/messaging.js';
 import { checkForUpdates } from './core/updater.js';
 import {
+  appendSelectorCollection,
   getCurrentEmailData,
   getRealtimeConfig,
   getRemoteEmailDetails,
@@ -13,6 +14,7 @@ import {
   setRealtimeConfig,
   syncCurrentEmailData
 } from './core/realtime-db.js';
+import { getSelectorConfig, saveSelectorConfig } from './core/storage.js';
 
 // ── Import features ──────────────────────────────────
 import { register as registerHelloWorld } from './features/hello-world/index.js';
@@ -83,9 +85,54 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   } else if (message.action === 'SYNC_CURRENT_EMAIL_DATA') {
     syncCurrentEmailData(message.payload || {}).then(sendResponse);
     return true;
+  } else if (message.action === 'GET_SELECTOR_CONFIG_FOR_DOMAIN') {
+    getSelectorConfig(message.payload?.domain).then(sendResponse);
+    return true;
+  } else if (message.action === 'SAVE_SELECTOR_CONFIG') {
+    saveSelectorConfig(message.payload?.domain, message.payload?.config || {}).then(sendResponse);
+    return true;
+  } else if (message.action === 'COLLECT_SELECTORS_FROM_ACTIVE_TAB') {
+    collectSelectorsFromActiveTab(message.payload || {}).then(sendResponse);
+    return true;
+  } else if (message.action === 'SYNC_SELECTOR_COLLECTION') {
+    appendSelectorCollection(message.payload).then(sendResponse);
+    return true;
   }
   return true;
 });
+
+function getDomainFromUrl(url) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return '';
+  }
+}
+
+async function collectSelectorsFromActiveTab(payload = {}) {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const domain = getDomainFromUrl(tab?.url || '');
+  if (!tab?.id || !domain) return { ok: false, error: 'Không tìm thấy tab/domain hiện tại.' };
+
+  const config = await getSelectorConfig(domain);
+  if (!config?.enabled || !Array.isArray(config.selectors) || config.selectors.length === 0) {
+    return { ok: false, error: 'Chưa có cấu hình selector cho domain này.' };
+  }
+
+  try {
+    const result = await chrome.tabs.sendMessage(tab.id, {
+      action: 'COLLECT_SELECTORS_ON_PAGE',
+      payload: { config, source: payload.source || 'popup' }
+    });
+    if (result?.ok && result.payload) {
+      const sync = await appendSelectorCollection(result.payload);
+      return { ...result, sync };
+    }
+    return result || { ok: false, error: 'Content script không trả dữ liệu.' };
+  } catch (error) {
+    return { ok: false, error: error.message || 'Không gửi được lệnh collect vào tab.' };
+  }
+}
 
 async function getAccountsHeadless() {
   const accounts = await new Promise((resolve) => {

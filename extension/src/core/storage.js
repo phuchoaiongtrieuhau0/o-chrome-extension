@@ -5,6 +5,7 @@
 import { err } from './logger.js';
 
 const TAG = 'storage';
+const SELECTOR_CONFIGS_KEY = 'selectorCollector:configs:v1';
 
 export async function get(key, defaultValue = null) {
   try {
@@ -48,6 +49,27 @@ export async function setMany(values) {
   } catch (e) {
     err(TAG, 'setMany failed', values, e);
   }
+}
+
+export async function getSelectorConfigs() {
+  return get(SELECTOR_CONFIGS_KEY, {});
+}
+
+export async function getSelectorConfig(domain) {
+  const configs = await getSelectorConfigs();
+  return configs[domain] || null;
+}
+
+export async function saveSelectorConfig(domain, config) {
+  const configs = await getSelectorConfigs();
+  const value = {
+    ...config,
+    domain,
+    updatedAt: new Date().toISOString()
+  };
+  configs[domain] = value;
+  await set(SELECTOR_CONFIGS_KEY, configs);
+  return value;
 }
 
 export async function getSync(key, defaultValue = null) {

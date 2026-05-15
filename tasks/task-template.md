@@ -2,6 +2,12 @@
 
 ## User prompt
 
+Hãy đọc file `tasks/templates/AGENT_PROMPT_RULE.md` để bổ sung cách xử lý rule vào dự án này, phải tuân thủ cấu trúc codebase hiện tại, chỉ lấy ý tưởng và xử lý cấu hình phần Rule để collect data web page.
+
+Dựa vào file `tasks/templates/AGENT_PROMPT_RULE.md`, nhưng phải bổ sung cách cấu hình vào thu thập theo chức năng UI thế này:
+
+1. Inject vào tất cả page khi truy cập, chèn thêm một panel bottom fix bao gồm các chức năng để `load rule`, `save rule`, `dry-run rule`, `view rule`, `Copy all element active tab để manual find element`, `trace log rule` ...
+
 ## Thông tin cần xác nhận
 
 Agent điền mục này nếu prompt thiếu dữ liệu cần thiết để triển khai đúng.
