@@ -1,14 +1,18 @@
-feat:Chuyển nút Reload Extension lên Header
+fix: Sửa lỗi cú pháp do backtick bị escape sai trong content.js
+
 Input của user:
-- Hãy chuyển chức năng này: id="btn-reload" lên phía sau phần <span class="name">My Extension</span>
+kiểm tra lỗi cú pháp file : extension\src\content.js
+
 Nguyên nhân gốc:
-- User muốn truy cập nhanh chức năng Reload ngay trên tiêu đề thay vì phải cuộn xuống cuối tab Admin.
+- File `extension/src/content.js` chứa các đoạn code HTML template dùng backtick (`` ` ``) và template literals (`${}`) nhưng bị chèn thêm ký tự gạch chéo ngược (`\`) ở phía trước (ví dụ: `\`` và `\${`). Điều này khiến JavaScript không hiểu đó là template string mà coi là các ký tự bình thường, dẫn tới lỗi cú pháp (`SyntaxError: Unexpected identifier`). 
+
 Cách đã chỉnh để khắc phục:
-- Di chuyển thẻ `<button id="btn-reload">` từ card Công cụ trong tab Admin lên `header .title-row`, ngay sau `span.name`.
-- Cập nhật class `header-reload` cho nút này để có kích thước nhỏ gọn (mini-btn) và hiệu ứng xoay nhẹ khi hover.
-- Điều chỉnh CSS `margin-right: auto` để đẩy các phần tử phía sau (version badge) về bên phải.
+- Viết script quyét toàn bộ file `content.js` để tìm và thay thế tất cả các chuỗi `\`` thành `` ` ``.
+- Thay thế các chuỗi `\${` thành `${` để các biến trong template literals hoạt động bình thường.
+- Chạy `node -c` để xác nhận file không còn lỗi cú pháp nào.
+
 File đã áp fix bug:
-- extension/src/popup/popup.html
-- extension/src/popup/popup.css
-Trả lời câu hỏi "Hãy chuyển chức năng này id=btn-reload":
-- Đã di chuyển nút Reload (⚡) lên Header, ngay sau tên extension. Nút được thiết kế nhỏ gọn và dễ dàng sử dụng từ bất kỳ tab nào.
+- `extension/src/content.js`
+
+Trả lời câu hỏi "kiểm tra lỗi cú pháp file":
+Đã xử lý xong. Lỗi cú pháp phát sinh do một thay đổi trước đó vô tình làm escape (thêm gạch chéo) vào các dấu backtick và dấu đô-la trong code khởi tạo giao diện của `content.js`. File đã được dọn sạch các dấu gạch chéo thừa và parse thành công không còn lỗi syntax nào.

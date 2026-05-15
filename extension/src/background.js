@@ -86,7 +86,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     syncCurrentEmailData(message.payload || {}).then(sendResponse);
     return true;
   } else if (message.action === 'GET_SELECTOR_CONFIG_FOR_DOMAIN') {
-    getSelectorConfig(message.payload?.domain).then(sendResponse);
+    Promise.all([
+      getSelectorConfig(message.payload?.domain),
+      getCurrentEmailData(),
+      chrome.storage.local.get(['fixed_variables'])
+    ]).then(([config, emailData, fixedVars]) => {
+      const email = emailData?.currentEmail?.email || '';
+      const emailKey = emailData?.currentEmail?.key || '';
+      const emailUsername = email ? email.split('@')[0] : '';
+      
+      const envVars = {
+        CURRENT_EMAIL: email,
+        CURRENT_EMAIL_KEY: emailKey,
+        CURRENT_EMAIL_USERNAME: emailUsername,
+        ...(fixedVars.fixed_variables || {})
+      };
+      
+      sendResponse({ ...(config || {}), envVars });
+    });
     return true;
   } else if (message.action === 'SAVE_SELECTOR_CONFIG') {
     saveSelectorConfig(message.payload?.domain, message.payload?.config || {}).then(sendResponse);

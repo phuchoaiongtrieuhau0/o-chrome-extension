@@ -254,7 +254,9 @@
       guideRules: Array.isArray(config.guideRules) ? config.guideRules : [],
       traceLog: Array.isArray(config.traceLog) ? config.traceLog : [],
       dockPos: config.dockPos || 'bottom',
-      isOpen: config.isOpen ?? true
+      isOpen: config.isOpen ?? true,
+      panelW: config.panelW || '420px',
+      panelH: config.panelH || '350px'
     };
   }
 
@@ -339,42 +341,64 @@
     const style = document.createElement('style');
     style.textContent = `
       :host { all: initial; }
-      .panel { position: fixed; z-index: 2147483647; box-sizing: border-box; border: 1px solid rgba(99,102,241,.5); border-radius: 12px; background: #0f172a; color: #e5e7eb; font: 12px/1.4 system-ui, -apple-system, Segoe UI, sans-serif; box-shadow: 0 12px 48px rgba(0,0,0,.5); overflow: hidden; transition: all 0.2s ease-in-out; display: flex; flex-direction: column; }
+      .panel { position: fixed; z-index: 2147483647; box-sizing: border-box; border: 1px solid rgba(99,102,241,.5); border-radius: 12px; background: #0f172a; color: #e5e7eb; font: 12px/1.4 system-ui, -apple-system, Segoe UI, sans-serif; box-shadow: 0 12px 48px rgba(0,0,0,.5); overflow: hidden; display: flex; flex-direction: column; }
       
-      .panel.dock-bottom { left: 12px; right: 12px; bottom: 12px; max-height: 48vh; }
-      .panel.dock-top { left: 12px; right: 12px; top: 12px; max-height: 48vh; }
-      .panel.dock-left { left: 12px; top: 12px; bottom: 12px; width: 420px; max-width: 45vw; }
-      .panel.dock-right { right: 12px; top: 12px; bottom: 12px; width: 420px; max-width: 45vw; }
+      .panel.dock-bottom { left: 12px; right: 12px; bottom: 12px; height: var(--panel-h, 350px); max-height: 90vh; }
+      .panel.dock-top { left: 12px; right: 12px; top: 12px; height: var(--panel-h, 350px); max-height: 90vh; }
+      .panel.dock-left { left: 12px; top: 12px; bottom: 12px; width: var(--panel-w, 420px); max-width: 90vw; }
+      .panel.dock-right { right: 12px; top: 12px; bottom: 12px; width: var(--panel-w, 420px); max-width: 90vw; }
 
       .panel:not(.open) { height: 42px !important; width: auto !important; max-height: 42px !important; border-color: rgba(99,102,241,.3); }
       .panel:not(.open).dock-left, .panel:not(.open).dock-right { bottom: auto; }
+
+      .resizer { position: absolute; z-index: 10; display: none; }
+      .panel.open.dock-bottom .resizer-top { display: block; top: -2px; left: 0; right: 0; height: 8px; cursor: ns-resize; }
+      .panel.open.dock-top .resizer-bottom { display: block; bottom: -2px; left: 0; right: 0; height: 8px; cursor: ns-resize; }
+      .panel.open.dock-left .resizer-right { display: block; top: 0; bottom: 0; right: -2px; width: 8px; cursor: ew-resize; }
+      .panel.open.dock-right .resizer-left { display: block; top: 0; bottom: 0; left: -2px; width: 8px; cursor: ew-resize; }
+      .resizer:hover { background: rgba(99,102,241,0.3); }
 
       .bar { display: flex; gap: 6px; align-items: center; padding: 8px 12px; border-bottom: 1px solid rgba(148,163,184,.15); background: rgba(30,41,59,.5); backdrop-filter: blur(8px); flex-shrink: 0; }
       .title { font-weight: 700; margin-right: auto; white-space: nowrap; color: #818cf8; overflow: hidden; text-overflow: ellipsis; }
       
       .dock-select { background: #1e293b; border: 1px solid rgba(148,163,184,.3); color: #94a3b8; border-radius: 6px; padding: 2px 4px; font-size: 10px; cursor: pointer; }
       
-      button { border: 1px solid rgba(148,163,184,.3); border-radius: 8px; background: #1e293b; color: #e5e7eb; cursor: pointer; padding: 6px 10px; font: inherit; transition: all 0.15s; white-space: nowrap; }
+      button { border: 1px solid rgba(148,163,184,.3); border-radius: 8px; background: #1e293b; color: #e5e7eb; cursor: pointer; padding: 6px 10px; font: inherit; transition: all 0.15s; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; }
       button:hover { background: #334155; border-color: rgba(148,163,184,.5); }
       .primary { background: #4f46e5; border-color: #6366f1; color: white; }
       
-      .body { display: none; grid-template-columns: minmax(300px, 1fr) minmax(340px, 1.2fr); gap: 12px; padding: 12px; flex: 1; overflow: hidden; }
-      .panel.dock-left .body, .panel.dock-right .body { grid-template-columns: 1fr; overflow-y: auto; }
+      .body { display: none; grid-template-columns: minmax(280px, 1fr) minmax(300px, 1.2fr); gap: 12px; padding: 12px; flex: 1; overflow: hidden; min-height: 0; }
+      .panel.dock-left .body, .panel.dock-right .body { grid-template-columns: 1fr; overflow-y: auto; display: flex; flex-direction: column; }
       .panel.open .body { display: grid; }
       .panel.dock-left.open .body, .panel.dock-right.open .body { display: flex; flex-direction: column; }
-      textarea, pre, input, select { box-sizing: border-box; width: 100%; margin: 0; border: 1px solid rgba(148,163,184,.2); border-radius: 8px; background: #020617; color: #d1d5db; font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; padding: 8px 10px; outline: none; }
+      
+      .left-pane { display: flex; flex-direction: column; overflow: hidden; min-height: 0; gap: 8px; flex: 1; }
+      .right-pane { margin: 0; border: 1px solid rgba(148,163,184,.2); border-radius: 8px; background: #020617; color: #d1d5db; font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; padding: 8px 10px; overflow: auto; min-height: 100px; }
+      .panel.dock-left .right-pane, .panel.dock-right .right-pane { min-height: 200px; flex: 1; }
+
+      .tab { display: none; flex-direction: column; flex: 1; overflow-y: auto; overflow-x: hidden; gap: 8px; padding-right: 4px; min-height: 0; }
+      .tab.active { display: flex; }
+      
+      .tabs { display: flex; gap: 6px; flex-wrap: wrap; flex-shrink: 0; }
+      .tabs button { padding: 4px 8px; font-size: 11px; }
+
+      textarea, input, select { box-sizing: border-box; width: 100%; border: 1px solid rgba(148,163,184,.2); border-radius: 8px; background: #020617; color: #d1d5db; font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; padding: 8px 10px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+      input, select { padding: 6px 10px; }
+      textarea { height: 100%; min-height: 100px; resize: none; }
       textarea:focus, input:focus, select:focus { border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,.2); }
-      textarea, pre { height: 100%; min-height: 200px; max-height: 34vh; overflow: auto; }
-      textarea { resize: vertical; }
-      label { display: grid; gap: 4px; margin-bottom: 4px; color: #94a3b8; font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+      
+      label { display: grid; gap: 4px; color: #94a3b8; font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin: 0; }
       .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-      .finder-controls, .builder-actions { display: grid; grid-template-columns: 100px 1fr 80px 80px; gap: 6px; margin-bottom: 8px; }
-      .results { display: flex; flex-direction: column; gap: 8px; max-height: 28vh; overflow-y: auto; padding-right: 4px; }
+      .finder-controls, .builder-actions { display: flex; flex-wrap: wrap; gap: 6px; flex-shrink: 0; }
+      .finder-controls > *, .builder-actions > * { flex: 1; min-width: 60px; }
+      .finder-controls input { flex: 2; min-width: 120px; }
+      
+      .results { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex: 1; padding-right: 4px; min-height: 0; }
       .result { border: 1px solid rgba(148,163,184,.15); border-radius: 8px; padding: 10px; background: rgba(30,41,59,.4); }
       .result-title { color: #818cf8; font-weight: 600; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .result-code { color: #10b981; font: 11px ui-monospace, Consolas, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 2px; cursor: pointer; }
       .result-code:hover { color: #34d399; text-decoration: underline; }
-      .mini-actions { display: flex; gap: 6px; margin-top: 8px; }
+      .mini-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
       .mini-actions button { padding: 4px 8px; font-size: 10px; background: transparent; }
       .status { color: #6366f1; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 30vw; }
       .active-tab-btn { background: #4f46e5 !important; border-color: #818cf8 !important; }
@@ -386,8 +410,8 @@
       ::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,.4); }
 
       @media (max-width: 800px) { 
-        .body { grid-template-columns: 1fr; } 
-        .panel.open { max-height: 80vh; }
+        .body { grid-template-columns: 1fr; display: flex; flex-direction: column; } 
+        .right-pane { min-height: 200px; flex: 1; }
         .status { display: none; }
       }
       #${INSPECTOR_HIGHLIGHT_ID} { box-shadow: 0 0 0 9999px rgba(0,0,0,0.2); }
@@ -398,7 +422,13 @@
     const panel = document.createElement('section');
     panel.className = `panel ${currentConfig.isOpen ? 'open' : ''} dock-${currentConfig.dockPos || 'bottom'}`;
     panel.dataset.dock = currentConfig.dockPos || 'bottom';
+    panel.style.setProperty('--panel-h', currentConfig.panelH || '350px');
+    panel.style.setProperty('--panel-w', currentConfig.panelW || '420px');
     panel.innerHTML = `
+      <div class="resizer resizer-top" data-resizer="top"></div>
+      <div class="resizer resizer-bottom" data-resizer="bottom"></div>
+      <div class="resizer resizer-left" data-resizer="left"></div>
+      <div class="resizer resizer-right" data-resizer="right"></div>
       <div class="bar">
         <span class="title">Rule · ${getCurrentDomain()}</span>
         <button type="button" data-action="cycle-dock">Dock: ${(currentConfig.dockPos || 'bottom').charAt(0).toUpperCase() + (currentConfig.dockPos || 'bottom').slice(1)}</button>
@@ -412,7 +442,7 @@
         <button type="button" data-action="guide">Guide</button>
       </div>
       <div class="body">
-        <div>
+        <div class="left-pane">
           <div class="tabs">
             <button type="button" data-tab="json" class="active-tab-btn">Rule JSON</button>
             <button type="button" data-tab="finder">Finder</button>
@@ -440,6 +470,7 @@
             <div class="results" data-role="finder-results"></div>
           </div>
           <div class="tab" data-panel="builder">
+            <div data-role="env-vars" style="font-size: 11px; color: #10b981; padding: 4px 8px; border: 1px dashed rgba(16,185,129,0.3); border-radius: 4px; margin-bottom: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Loading variables...</div>
             <div class="row">
               <label>Label/key <input data-role="builder-label" placeholder="emailInput"></label>
               <label>Mode <select data-role="builder-mode"><option value="text">text</option><option value="attr">attr</option></select></label>
@@ -457,7 +488,7 @@
             </div>
           </div>
         </div>
-        <pre data-role="output">Chưa chạy.</pre>
+        <pre class="right-pane" data-role="output">Chưa chạy.</pre>
       </div>
     `;
 
@@ -471,6 +502,7 @@
     const builderAttr = panel.querySelector('[data-role="builder-attr"]');
     const builderMultiple = panel.querySelector('[data-role="builder-multiple"]');
     const dockButton = panel.querySelector('[data-action="cycle-dock"]');
+    const envVarsDisplay = panel.querySelector('[data-role="env-vars"]');
 
     function setStatus(message) {
       status.textContent = message;
@@ -493,6 +525,17 @@
 
     function renderConfig() {
       textarea.value = JSON.stringify(currentConfig, null, 2);
+    }
+
+    function renderEnvVars() {
+      if (!envVarsDisplay) return;
+      if (!currentConfig.envVars || Object.keys(currentConfig.envVars).length === 0) {
+        envVarsDisplay.textContent = 'No variables available.';
+        return;
+      }
+      const text = Object.entries(currentConfig.envVars).map(([k,v]) => `${k}: ${v}`).join(' | ');
+      envVarsDisplay.textContent = `Vars: ${text}`;
+      envVarsDisplay.title = text;
     }
 
     function readConfigFromTextarea() {
@@ -518,8 +561,13 @@
     }
 
     async function loadRule() {
-      currentConfig = defaultConfig(await loadCollectorConfig());
+      const config = await loadCollectorConfig();
+      currentConfig = defaultConfig(config);
+      if (config && config.envVars) {
+        currentConfig.envVars = config.envVars;
+      }
       renderConfig();
+      renderEnvVars();
       output.textContent = JSON.stringify(currentConfig, null, 2);
       setStatus('Loaded rule');
       await appendTrace('load', true, `${currentConfig.selectors.length} selectors`);
@@ -785,6 +833,72 @@
         try { await appendTrace(action, false, message); } catch (_) {}
       }
     });
+
+    // Resizer logic
+    let isResizing = false;
+    let currentResizer = null;
+    let startX, startY, startW, startH;
+
+    panel.addEventListener('mousedown', (e) => {
+      if (e.target.classList.contains('resizer') && e.button === 0) {
+        isResizing = true;
+        currentResizer = e.target.dataset.resizer;
+        startX = e.clientX;
+        startY = e.clientY;
+        const rect = panel.getBoundingClientRect();
+        startW = rect.width;
+        startH = rect.height;
+        document.body.style.userSelect = 'none';
+        
+        // Add overlay to prevent iframe stealing mouse
+        let overlay = document.getElementById('__ext_resizer_overlay');
+        if (!overlay) {
+          overlay = document.createElement('div');
+          overlay.id = '__ext_resizer_overlay';
+          overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:2147483647;cursor:' + e.target.style.cursor;
+          document.body.appendChild(overlay);
+        } else {
+          overlay.style.display = 'block';
+          overlay.style.cursor = e.target.style.cursor || getComputedStyle(e.target).cursor;
+        }
+        
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isResizing) return;
+      if (currentResizer === 'top') {
+        const dy = startY - e.clientY;
+        panel.style.setProperty('--panel-h', `${Math.max(100, startH + dy)}px`);
+      } else if (currentResizer === 'bottom') {
+        const dy = e.clientY - startY;
+        panel.style.setProperty('--panel-h', `${Math.max(100, startH + dy)}px`);
+      } else if (currentResizer === 'left') {
+        const dx = startX - e.clientX;
+        panel.style.setProperty('--panel-w', `${Math.max(250, startW + dx)}px`);
+      } else if (currentResizer === 'right') {
+        const dx = e.clientX - startX;
+        panel.style.setProperty('--panel-w', `${Math.max(250, startW + dx)}px`);
+      }
+      
+      // Update page spacing
+      reservePageSpace(host);
+    }, true);
+
+    document.addEventListener('mouseup', () => {
+      if (isResizing) {
+        isResizing = false;
+        document.body.style.userSelect = '';
+        const overlay = document.getElementById('__ext_resizer_overlay');
+        if (overlay) overlay.style.display = 'none';
+        
+        currentConfig.panelH = panel.style.getPropertyValue('--panel-h');
+        currentConfig.panelW = panel.style.getPropertyValue('--panel-w');
+        saveConfig(currentConfig);
+      }
+    }, true);
 
     renderConfig();
     shadow.append(style, panel);
