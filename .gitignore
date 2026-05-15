@@ -3,3 +3,4 @@ extension.pem
 *.zip
 node_modules/
 dist/
+.claude/worktrees/**
