@@ -67,6 +67,25 @@ header {
   background: linear-gradient(to right, #818cf8, #c084fc);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  margin-right: 6px;
+}
+
+.header-reload {
+  padding: 4px 6px;
+  background: rgba(34, 197, 94, 0.05);
+  border-color: rgba(34, 197, 94, 0.2);
+  color: var(--success);
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  margin-right: auto;
+}
+
+.header-reload:hover {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: var(--success);
+  transform: rotate(15deg);
 }
 
 .version-badge {
